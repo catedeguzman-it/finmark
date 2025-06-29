@@ -12,12 +12,28 @@ export default function AuthForm() {
 
   const handleAuth = async () => {
     setError('');
-    const { error } = isSignUp
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) return setError(error.message);
-    router.push('/dashboard');
+    // Basic input validation
+    if (!email.trim() || !password.trim()) {
+      setError('Both email and password are required.');
+      return;
+    }
+
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    try {
+      const { error } = isSignUp
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) return setError(error.message);
+      router.push('/dashboard');
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    }
   };
 
   return (
@@ -31,12 +47,14 @@ export default function AuthForm() {
             type="email"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
             placeholder="Email address"
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type="password"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
             placeholder="Password"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -47,7 +65,10 @@ export default function AuthForm() {
             {isSignUp ? 'Sign Up' : 'Login'}
           </button>
           <p
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError('');
+            }}
             className="text-sm text-center text-[#26C6DA] mt-2 cursor-pointer hover:underline transition"
           >
             {isSignUp
