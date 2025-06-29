@@ -21,29 +21,39 @@ export default function AuthForm() {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-sm">
-      <h2 className="text-xl font-bold mb-4">{isSignUp ? 'Sign Up' : 'Sign In'}</h2>
-      <input
-        className="border p-2 w-full mb-2"
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        className="border p-2 w-full mb-2"
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      <button onClick={handleAuth} className="bg-blue-500 text-white w-full py-2 mt-2 rounded">
-        {isSignUp ? 'Create Account' : 'Login'}
-      </button>
-      <p
-        onClick={() => setIsSignUp(!isSignUp)}
-        className="text-blue-600 text-sm text-center mt-2 cursor-pointer"
-      >
-        {isSignUp ? 'Already have an account?' : 'Need to create an account?'}
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5] px-4">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm">
+        <h2 className="text-2xl font-semibold text-center text-[#26C6DA] mb-6">
+          {isSignUp ? 'Create Account' : 'Welcome Back'}
+        </h2>
+        <div className="space-y-4">
+          <input
+            type="email"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA]"
+            placeholder="Email"
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA]"
+            placeholder="Password"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          <button
+            onClick={handleAuth}
+            className="w-full bg-[#26C6DA] text-white font-semibold py-2 rounded-lg hover:bg-[#1fb3c3] transition"
+          >
+            {isSignUp ? 'Sign Up' : 'Login'}
+          </button>
+          <p
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-sm text-center text-[#26C6DA] mt-2 cursor-pointer hover:underline"
+          >
+            {isSignUp ? 'Already have an account? Sign in' : 'New here? Create an account'}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
