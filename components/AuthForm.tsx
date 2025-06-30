@@ -23,32 +23,19 @@ export default function AuthForm() {
       return;
     }
 
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      let result;
-      if (isSignUp) {
-        result = await supabase.auth.signUp({ email, password });
-        if (!result.error && !result.data.session) {
-          setMessage('Check your email to confirm your account.');
-          setLoading(false);
-          return;
-        }
-      } else {
-        result = await supabase.auth.signInWithPassword({ email, password });
-      }
+      const { error, data } = isSignUp
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
 
-      const { error } = result;
       if (error) {
         setError(error.message);
+      } else if (isSignUp && !data.session) {
+        setMessage('Check your email to confirm your account.');
       } else {
         router.push('/dashboard');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -56,26 +43,24 @@ export default function AuthForm() {
   };
 
   const handleGoogleLogin = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+  setError('');
+  setLoading(true);
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) setError(error.message);
+  } catch {
+    setError('Google login failed. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
-        },
-      });
-      if (error) {
-        setError(error.message);
-      }
-    } catch (err) {
-      setError('Google login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+<<<<<<< HEAD
 return (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f5f5] to-[#e0f7fa] px-4">
     <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-xl p-8 sm:p-10 transition-all">
@@ -154,4 +139,94 @@ return (
     </div>
   </div>
 );
+=======
+  return (
+  <div className="space-y-6">
+    {/* Email Field */}
+    <div className="space-y-1">
+      <label htmlFor="email" className="text-sm font-medium text-gray-700">
+        Email Address
+      </label>
+      <input
+        id="email"
+        type="email"
+        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
+        placeholder="e.g. you@email.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+    </div>
+
+    {/* Password Field */}
+    <div className="space-y-1">
+      <label htmlFor="password" className="text-sm font-medium text-gray-700">
+        Password
+      </label>
+      <input
+        id="password"
+        type="password"
+        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
+        placeholder="Your password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+    </div>
+
+    {/* Message/Error */}
+    {(error || message) && (
+      <p className={`text-sm text-center ${error ? 'text-red-500' : 'text-green-600'}`}>
+        {error || message}
+      </p>
+    )}
+
+    {/* Login Button */}
+    <button
+      onClick={handleAuth}
+      disabled={loading}
+      className="btn-primary mt-2"
+    >
+      {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}
+    </button>
+
+        <div className="relative">
+      <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t border-gray-300" />
+      </div>
+      <div className="relative flex justify-center text-sm">
+        <span className="bg-white px-2 text-gray-500">or</span>
+      </div>
+    </div>
+
+    <button
+      onClick={handleGoogleLogin}
+      disabled={loading}
+      className="w-full py-2 px-4 flex items-center justify-center bg-white text-[#5f6368] border border-gray-300 rounded-md font-medium text-sm hover:shadow-md transition-shadow"
+    >
+      <img
+        src="https://developers.google.com/identity/images/g-logo.png"
+        alt="Google"
+        className="w-4 h-4 object-contain"
+        style={{ width: '40px', height: '40px', padding: '5px', backgroundColor: '#fff' }}
+
+      />
+      <span>Sign in with Google</span>
+    </button>
+
+    {/* Toggle Link */}
+    <span
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        setIsSignUp(!isSignUp);
+        setError('');
+      }}
+      className="text-sm text-center text-[#26C6DA] mt-2 cursor-pointer hover:underline transition block"
+    >
+      {isSignUp
+        ? 'Already have an account? Sign in'
+        : 'New here? Create an account'}
+    </span>
+  </div>
+  );
+>>>>>>> 296a4a1553a307cabf2089da5837884395692a3b
 }
