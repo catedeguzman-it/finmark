@@ -1,19 +1,12 @@
 import '../styles/globals.css';
-import type { Metadata } from 'next';
+import Providers from './providers';
 
-export const metadata: Metadata = {
-  title: 'FinMark Prototype',
-  description: 'Cloud-native modernization platform',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
