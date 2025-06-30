@@ -1,2 +1,42 @@
-node_modules
-.next
+# Node modules
+node_modules/
+
+# Environment variables
+.env*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+.next/
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+
+# Tailwind and PostCSS cache
+.pnp.*
+.pnp
+.cache/
+
+# Supabase CLI hidden folders (if used)
+.supabase/
+
+# Optional: lockfiles (if only using one package manager)
+# Uncomment the one you're not using
+# yarn.lock
+# package-lock.json
+
+# Next.js static exports
+export/
+
+# Generated TypeScript files
+*.tsbuildinfo
