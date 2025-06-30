@@ -76,71 +76,82 @@ export default function AuthForm() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f5f5] to-[#e0f7fa] px-4">
-      <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-xl p-8 sm:p-10 transition-all">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center text-[#26C6DA] mb-6">
-          {isSignUp ? 'Create Account' : 'Welcome Back'}
-        </h2>
-        <div className="space-y-5">
-          <input
-            type="email"
-            name="email"
-            id="email"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            name="password"
-            id="password"
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          {message && <p className="text-green-600 text-sm text-center">{message}</p>}
-          <button
-            onClick={handleAuth}
-            disabled={loading}
-            className={`w-full py-3 ${
-              loading ? 'bg-gray-400' : 'bg-[#26C6DA] hover:bg-[#1ca7b8]'
-            } text-white font-medium rounded-lg transition-colors`}
-          >
-            {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}
-          </button>
-
-          {/* Google Login Button */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full h-10 flex items-center justify-center gap-3 bg-white text-[#5f6368] border border-gray-300 rounded-md font-medium text-sm hover:shadow-md transition-shadow"
-          >
-            <img
-              src="https://developers.google.com/identity/images/g-logo.png"
-              alt="Google"
-              className="w-3 h-3"
-            />
-            Sign in with Google
-          </button>
-
-          <p
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError('');
-              setMessage('');
-            }}
-            className="text-sm text-center text-[#26C6DA] mt-2 cursor-pointer hover:underline transition"
-          >
-            {isSignUp
-              ? 'Already have an account? Sign in'
-              : 'New here? Create an account'}
-          </p>
-        </div>
+return (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5f5f5] to-[#e0f7fa] px-4">
+    <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-xl p-8 sm:p-10 transition-all">
+      <h2 className="text-2xl sm:text-3xl font-bold text-center text-[#26C6DA] mb-6">
+        {isSignUp ? 'Create Account' : 'Welcome Back'}
+      </h2>
+      <div className="space-y-5">
+        <input
+          type="email"
+          name="email"
+          id="email"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="password"
+          name="password"
+          id="password"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {message && <p className="text-green-600 text-sm text-center">{message}</p>}
+        <button
+          onClick={handleAuth}
+          disabled={loading}
+          className={`w-full py-3 ${
+            loading ? 'bg-gray-400' : 'bg-[#26C6DA] hover:bg-[#1ca7b8]'
+          } text-white font-medium rounded-lg transition-colors`}
+        >
+          {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}
+        </button>
+        {/* Google Login Button */}
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full h-10 flex items-center justify-center gap-3 bg-white text-[#5f6368] border border-gray-300 rounded-md font-medium text-sm hover:shadow-md transition-shadow disabled:opacity-60"
+        >
+          {loading ? (
+            <svg
+              className="animate-spin w-4 h-4 text-[#5f6368]"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+          ) : (
+            <>
+              <img
+                src="https://developers.google.com/identity/images/g-logo.png"
+                alt="Google"
+                className="w-2 h-2"
+              />
+              Sign in with Google
+            </>
+          )}
+        </button>
       </div>
     </div>
-  );
+  </div>
+);
 }
