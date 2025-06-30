@@ -9,30 +9,70 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
     setError('');
+    setMessage('');
+    setLoading(true);
 
-    // Basic input validation
     if (!email.trim() || !password.trim()) {
       setError('Both email and password are required.');
+      setLoading(false);
       return;
     }
 
     if (!email.includes('@')) {
       setError('Please enter a valid email address.');
+      setLoading(false);
       return;
     }
 
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+      let result;
+      if (isSignUp) {
+        result = await supabase.auth.signUp({ email, password });
+        if (!result.error && !result.data.session) {
+          setMessage('Check your email to confirm your account.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        result = await supabase.auth.signInWithPassword({ email, password });
+      }
 
-      if (error) return setError(error.message);
-      router.push('/dashboard');
+      const { error } = result;
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+
+        },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err) {
+      setError('Google login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,6 +85,8 @@ export default function AuthForm() {
         <div className="space-y-5">
           <input
             type="email"
+            name="email"
+            id="email"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
             placeholder="Email address"
             value={email}
@@ -52,22 +94,44 @@ export default function AuthForm() {
           />
           <input
             type="password"
+            name="password"
+            id="password"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#26C6DA] placeholder-gray-400"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {message && <p className="text-green-600 text-sm text-center">{message}</p>}
           <button
             onClick={handleAuth}
-            className="w-full py-3 bg-[#26C6DA] text-white font-medium rounded-lg hover:bg-[#1ca7b8] transition-colors"
+            disabled={loading}
+            className={`w-full py-3 ${
+              loading ? 'bg-gray-400' : 'bg-[#26C6DA] hover:bg-[#1ca7b8]'
+            } text-white font-medium rounded-lg transition-colors`}
           >
-            {isSignUp ? 'Sign Up' : 'Login'}
+            {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}
           </button>
+
+          {/* Google Login Button */}
+          <button
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full h-10 flex items-center justify-center gap-3 bg-white text-[#5f6368] border border-gray-300 rounded-md font-medium text-sm hover:shadow-md transition-shadow"
+          >
+            <img
+              src="https://developers.google.com/identity/images/g-logo.png"
+              alt="Google"
+              className="w-3 h-3"
+            />
+            Sign in with Google
+          </button>
+
           <p
             onClick={() => {
               setIsSignUp(!isSignUp);
               setError('');
+              setMessage('');
             }}
             className="text-sm text-center text-[#26C6DA] mt-2 cursor-pointer hover:underline transition"
           >
