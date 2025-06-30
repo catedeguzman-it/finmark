@@ -17,8 +17,22 @@ export default function AuthForm() {
     setMessage('');
     setLoading(true);
 
+    // ✅ Input validation
     if (!email.trim() || !password.trim()) {
       setError('Both email and password are required.');
+      setLoading(false);
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      setError('Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
       setLoading(false);
       return;
     }
@@ -28,11 +42,19 @@ export default function AuthForm() {
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
 
+      // ✅ Friendly error messages
       if (error) {
-        setError(error.message);
+        if (error.message.includes('user already registered')) {
+          setError('Email already registered. Try logging in.');
+        } else if (error.message.includes('Invalid login credentials')) {
+          setError('Incorrect email or password.');
+        } else {
+          setError(error.message);
+        }
       } else if (isSignUp && !data.session) {
         setMessage('Check your email to confirm your account.');
       } else {
+        setMessage(isSignUp ? 'Sign-up successful! Redirecting...' : 'Login successful! Redirecting...');
         router.push('/dashboard');
       }
     } catch {
@@ -40,7 +62,7 @@ export default function AuthForm() {
     } finally {
       setLoading(false);
     }
-  };
+    };
 
   const handleGoogleLogin = async () => {
   setError('');
