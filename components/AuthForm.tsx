@@ -2,11 +2,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '../lib/supabaseClient';
-const supabase = getSupabaseClient();
-
 
 export default function AuthForm() {
   const router = useRouter();
+  const supabase = getSupabaseClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
