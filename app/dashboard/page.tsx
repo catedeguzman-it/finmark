@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import { getFinancialData } from '../../utils/getFinancialData';
 import { getOrgScopedFinancialData } from '../../utils/getOrgScopedFinancialData';
 import { seedDemoData } from '../../utils/seedDemoData'; 
+import { getSupabaseClient } from '../../lib/supabaseClient';
+const supabase = getSupabaseClient();
 import {
   LineChart,
   Line,
@@ -49,6 +50,9 @@ export default function PaginatedDashboard() {
           .select()
           .single();
 
+        if (!newOrg) {
+          throw new Error("Failed to create new organization.");
+        }
         await supabase.from('users').insert({
           id: user.id,
           email: user.email,
@@ -58,21 +62,23 @@ export default function PaginatedDashboard() {
         currentOrgId = newOrg.id;
       }
 
-      setOrgId(currentOrgId);
+      setOrgId(currentOrgId as string | null);
 
       // 🏷 Get org name
       const { data: orgRecord } = await supabase
         .from('organizations')
         .select('name')
-        .eq('id', currentOrgId)
+        .eq('id', currentOrgId as string)
         .single();
 
-      setOrgName(orgRecord?.name ?? '');
+      setOrgName(orgRecord && typeof orgRecord.name === 'string' ? orgRecord.name : '');
 
       // 📊 Get paginated data
-      const { data: financials, count } = await getFinancialData(currentOrgId, page, pageSize);
-      setData(financials);
-      setTotalCount(count || 0);
+      if (typeof currentOrgId === 'string') {
+        const { data: financials, count } = await getFinancialData(currentOrgId, page, pageSize);
+        setData(financials);
+        setTotalCount(count || 0);
+      }
     };
 
     fetchData();
