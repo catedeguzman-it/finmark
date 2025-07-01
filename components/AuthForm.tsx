@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import { getSupabaseClient } from '../lib/supabaseClient';
+const supabase = getSupabaseClient();
+
 
 export default function AuthForm() {
   const router = useRouter();
