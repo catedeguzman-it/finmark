@@ -1,6 +1,7 @@
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from './supabase/client';
 
 export const seedDemoData = async (orgId: string) => {
+  const supabase = createClient();
   const demoRows = [
     { month: 'Jan', revenue: 12000, expenses: 8000 },
     { month: 'Feb', revenue: 15000, expenses: 9000 },

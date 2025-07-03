@@ -1,7 +1,8 @@
 // utils/getOrgScopedFinancialData.ts
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from './supabase/client';
 
 export async function getOrgScopedFinancialData(userId: string) {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('financial_data')
     .select('*, users!inner(id, org_id)')

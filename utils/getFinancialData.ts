@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { createClient } from './supabase/client';
 
 export async function getFinancialData(
   orgId: string,
   page: number,
   pageSize: number
 ): Promise<{ data: any[]; count: number }> {
+  const supabase = createClient();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
