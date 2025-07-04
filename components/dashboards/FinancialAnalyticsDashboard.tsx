@@ -1,341 +1,475 @@
 'use client';
 
+import React from 'react';
+import { faker } from '@faker-js/faker';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   DollarSign, 
-  Calculator, 
+  TrendingUp, 
+  TrendingDown,
   PieChart as PieChartIcon,
-  BarChart3,
+  Wallet,
+  CreditCard,
+  Building,
   FileText,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  Download,
+  Plus,
+  Activity
 } from 'lucide-react';
 import {
+  ResponsiveContainer,
   LineChart,
   Line,
-  AreaChart,
-  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   BarChart,
   Bar,
   PieChart,
   Pie,
   Cell,
-  ComposedChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
+  AreaChart,
+  Area,
+  ComposedChart
 } from 'recharts';
 
-// Financial KPIs
-const financialKPIs = [
-  { title: 'Net Revenue', value: '$3.2M', change: '+15.8%', trend: 'up', icon: DollarSign },
-  { title: 'Operating Margin', value: '28.4%', change: '+3.2%', trend: 'up', icon: TrendingUp },
-  { title: 'Cash Flow', value: '$1.8M', change: '+22.1%', trend: 'up', icon: BarChart3 },
-  { title: 'Processing Time', value: '1.2s', change: '-89%', trend: 'up', icon: Clock },
+// Generate dummy financial data
+const generateRevenueData = () => {
+  return Array.from({ length: 12 }, (_, i) => {
+    const month = new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short' });
+    return {
+      month,
+      revenue: faker.number.int({ min: 150000, max: 300000 }),
+      expenses: faker.number.int({ min: 80000, max: 150000 }),
+      profit: 0,
+      target: faker.number.int({ min: 200000, max: 280000 })
+    };
+  }).map(item => ({
+    ...item,
+    profit: item.revenue - item.expenses
+  }));
+};
+
+const generatePortfolioData = () => {
+  return Array.from({ length: 15 }, () => ({
+    id: faker.string.uuid(),
+    name: faker.company.name(),
+    type: faker.helpers.arrayElement(['Equity', 'Bonds', 'Real Estate', 'Commodities', 'Crypto']),
+    value: faker.number.float({ min: 10000, max: 500000, fractionDigits: 2 }),
+    change: faker.number.float({ min: -15, max: 20, fractionDigits: 2 }),
+    allocation: faker.number.float({ min: 5, max: 25, fractionDigits: 1 }),
+    risk: faker.helpers.arrayElement(['Low', 'Medium', 'High']),
+    manager: faker.person.fullName(),
+    lastUpdated: faker.date.recent({ days: 7 })
+  }));
+};
+
+const generateTransactionsData = () => {
+  return Array.from({ length: 20 }, () => ({
+    id: faker.string.alphanumeric(10).toUpperCase(),
+    type: faker.helpers.arrayElement(['Income', 'Expense', 'Investment', 'Withdrawal']),
+    description: faker.finance.transactionDescription(),
+    amount: faker.number.float({ min: 100, max: 50000, fractionDigits: 2 }),
+    category: faker.helpers.arrayElement(['Operations', 'Marketing', 'R&D', 'Investments', 'Salary', 'Revenue']),
+    date: faker.date.recent({ days: 30 }),
+    status: faker.helpers.arrayElement(['Completed', 'Pending', 'Failed']),
+    currency: faker.helpers.arrayElement(['USD', 'EUR', 'SGD', 'MYR'])
+  }));
+};
+
+const generateCashFlowData = () => {
+  return Array.from({ length: 24 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - (23 - i));
+    return {
+      period: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+      inflow: faker.number.int({ min: 80000, max: 200000 }),
+      outflow: faker.number.int({ min: 60000, max: 180000 }),
+      net: 0
+    };
+  }).map(item => ({
+    ...item,
+    net: item.inflow - item.outflow
+  }));
+};
+
+const assetAllocationData = [
+  { name: 'Equities', value: 45, color: '#3b82f6' },
+  { name: 'Bonds', value: 25, color: '#10b981' },
+  { name: 'Real Estate', value: 15, color: '#f59e0b' },
+  { name: 'Commodities', value: 10, color: '#ef4444' },
+  { name: 'Cash', value: 5, color: '#6b7280' }
 ];
 
-// Multi-currency revenue data addressing international clients
-const currencyRevenueData = [
-  { month: 'Jan', USD: 180000, SGD: 245000, MYR: 756000, THB: 5940000, IDR: 2570000000 },
-  { month: 'Feb', USD: 220000, SGD: 298000, MYR: 924000, THB: 7260000, IDR: 3140000000 },
-  { month: 'Mar', USD: 250000, SGD: 338000, MYR: 1050000, THB: 8250000, IDR: 3570000000 },
-  { month: 'Apr', USD: 280000, SGD: 378000, MYR: 1176000, THB: 9240000, IDR: 3990000000 },
-  { month: 'May', USD: 320000, SGD: 432000, MYR: 1344000, THB: 10560000, IDR: 4560000000 },
-  { month: 'Jun', USD: 350000, SGD: 472500, MYR: 1470000, THB: 11550000, IDR: 4980000000 },
-];
-
-// Financial ratios and metrics for different client sectors
-const sectorAnalysis = [
-  { sector: 'Manufacturing', revenue: 1250000, margin: 32.5, roi: 18.7, clients: 145 },
-  { sector: 'Healthcare', revenue: 980000, margin: 28.9, roi: 22.3, clients: 89 },
-  { sector: 'E-commerce', revenue: 850000, margin: 25.1, roi: 35.2, clients: 167 },
-  { sector: 'Retail', revenue: 720000, margin: 22.8, roi: 16.9, clients: 203 },
-  { sector: 'SME', revenue: 650000, margin: 19.5, roi: 24.1, clients: 312 },
-];
-
-// Cash flow analysis
-const cashFlowData = [
-  { month: 'Jan', operating: 150000, investing: -45000, financing: 20000, net: 125000 },
-  { month: 'Feb', operating: 180000, investing: -30000, financing: 15000, net: 165000 },
-  { month: 'Mar', operating: 220000, investing: -60000, financing: 25000, net: 185000 },
-  { month: 'Apr', operating: 250000, investing: -40000, financing: 10000, net: 220000 },
-  { month: 'May', operating: 280000, investing: -55000, financing: 30000, net: 255000 },
-  { month: 'Jun', operating: 320000, investing: -70000, financing: 20000, net: 270000 },
-];
-
-// Portfolio breakdown
-const portfolioData = [
-  { name: 'Equities', value: 45, amount: 1580000, color: '#3B82F6' },
-  { name: 'Fixed Income', value: 25, amount: 875000, color: '#10B981' },
-  { name: 'Real Estate', value: 15, amount: 525000, color: '#F59E0B' },
-  { name: 'Commodities', value: 10, amount: 350000, color: '#EF4444' },
-  { name: 'Cash', value: 5, amount: 175000, color: '#8B5CF6' },
-];
-
-// Financial forecasting data
-const forecastData = [
-  { period: 'Q3 2024', actual: 950000, forecast: null, variance: null },
-  { period: 'Q4 2024', actual: 1050000, forecast: 1020000, variance: 2.9 },
-  { period: 'Q1 2025', actual: null, forecast: 1150000, variance: null },
-  { period: 'Q2 2025', actual: null, forecast: 1280000, variance: null },
-  { period: 'Q3 2025', actual: null, forecast: 1420000, variance: null },
-  { period: 'Q4 2025', actual: null, forecast: 1580000, variance: null },
-];
-
-// Recent calculation improvements
-const calculationMetrics = [
-  { metric: 'ROI Analysis', oldTime: '15 min', newTime: '1.2 sec', improvement: '99.9%', status: 'optimized' },
-  { metric: 'Portfolio Rebalancing', oldTime: '8 min', newTime: '0.8 sec', improvement: '99.8%', status: 'optimized' },
-  { metric: 'Risk Assessment', oldTime: '12 min', newTime: '1.5 sec', improvement: '99.8%', status: 'optimized' },
-  { metric: 'Financial Projections', oldTime: '20 min', newTime: '2.1 sec', improvement: '99.8%', status: 'optimized' },
+const currencies = [
+  { code: 'USD', symbol: '$', rate: 1.0, name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', rate: 0.85, name: 'Euro' },
+  { code: 'SGD', symbol: 'S$', rate: 1.35, name: 'Singapore Dollar' },
+  { code: 'MYR', symbol: 'RM', rate: 4.50, name: 'Malaysian Ringgit' }
 ];
 
 export default function FinancialAnalyticsDashboard() {
+  const revenueData = generateRevenueData();
+  const portfolioData = generatePortfolioData().sort((a, b) => b.value - a.value);
+  const transactionData = generateTransactionsData().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const cashFlowData = generateCashFlowData();
+
+  // Calculate key metrics
+  const totalPortfolioValue = portfolioData.reduce((sum, item) => sum + item.value, 0);
+  const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0);
+  const totalProfit = revenueData.reduce((sum, item) => sum + item.profit, 0);
+  const avgMonthlyRevenue = totalRevenue / revenueData.length;
+  const profitMargin = (totalProfit / totalRevenue) * 100;
+
+  const getTransactionBadge = (type: string) => {
+    const variants: Record<string, string> = {
+      'Income': 'bg-green-100 text-green-800',
+      'Expense': 'bg-red-100 text-red-800',
+      'Investment': 'bg-blue-100 text-blue-800',
+      'Withdrawal': 'bg-orange-100 text-orange-800'
+    };
+    
+    return (
+      <Badge className={variants[type] || ''}>
+        {type}
+      </Badge>
+    );
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, string> = {
+      'Completed': 'bg-green-100 text-green-800',
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Failed': 'bg-red-100 text-red-800'
+    };
+    
+    return (
+      <Badge className={variants[status] || ''}>
+        {status}
+      </Badge>
+    );
+  };
+
+  const getRiskBadge = (risk: string) => {
+    const variants: Record<string, string> = {
+      'Low': 'bg-green-100 text-green-800',
+      'Medium': 'bg-yellow-100 text-yellow-800',
+      'High': 'bg-red-100 text-red-800'
+    };
+    
+    return (
+      <Badge className={variants[risk] || ''}>
+        {risk}
+      </Badge>
+    );
+  };
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    const currencyInfo = currencies.find(c => c.code === currency);
+    return `${currencyInfo?.symbol || '$'}${amount.toLocaleString()}`;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Financial KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {financialKPIs.map((kpi, index) => {
-          const Icon = kpi.icon;
-          const isPositive = kpi.trend === 'up';
-          
-          return (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <Icon className={`h-5 w-5 ${isPositive ? 'text-green-600' : 'text-red-600'}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{kpi.title}</p>
-                    <p className="text-2xl font-bold text-gray-900">{kpi.value}</p>
-                  </div>
-                </div>
-                <div className={`flex items-center space-x-1 text-sm font-medium ${
-                  isPositive ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                  <span>{kpi.change}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Financial Analytics</h1>
+          <p className="text-gray-600 mt-1">Comprehensive financial insights and portfolio management</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-2" />
+            Export Report
+          </Button>
+          <Button size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            New Investment
+          </Button>
+        </div>
       </div>
 
-      {/* Multi-Currency Revenue & Cash Flow Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Multi-Currency Revenue */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Multi-Currency Revenue Analysis</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={currencyRevenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'USD') return [`$${value.toLocaleString()}`, 'USD'];
-                    if (name === 'SGD') return [`S$${value.toLocaleString()}`, 'SGD'];
-                    if (name === 'MYR') return [`RM${value.toLocaleString()}`, 'MYR'];
-                    if (name === 'THB') return [`฿${value.toLocaleString()}`, 'THB'];
-                    if (name === 'IDR') return [`Rp${value.toLocaleString()}`, 'IDR'];
-                    return [value, name];
-                  }}
-                />
-                <Line type="monotone" dataKey="USD" stroke="#3B82F6" strokeWidth={2} />
-                <Line type="monotone" dataKey="SGD" stroke="#10B981" strokeWidth={2} />
-                <Line type="monotone" dataKey="MYR" stroke="#F59E0B" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Portfolio Value</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalPortfolioValue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline w-3 h-3 mr-1 text-green-500" />
+              +8.2% from last quarter
+            </p>
+          </CardContent>
+        </Card>
 
-        {/* Cash Flow Analysis */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Cash Flow Analysis</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={cashFlowData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
-                />
-                <Bar dataKey="operating" fill="#10B981" name="Operating CF" />
-                <Bar dataKey="investing" fill="#EF4444" name="Investing CF" />
-                <Bar dataKey="financing" fill="#3B82F6" name="Financing CF" />
-                <Line type="monotone" dataKey="net" stroke="#8B5CF6" strokeWidth={3} name="Net CF" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline w-3 h-3 mr-1 text-green-500" />
+              +12.5% from last year
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{profitMargin.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline w-3 h-3 mr-1 text-green-500" />
+              +2.3% from last year
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Monthly Revenue</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${avgMonthlyRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline w-3 h-3 mr-1 text-green-500" />
+              Consistent growth
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue & Profit Trend</CardTitle>
+            <CardDescription>Monthly revenue, expenses, and profit over the year</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value, name) => [`$${value.toLocaleString()}`, name]} />
+                <Legend />
+                <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" />
+                <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
+                <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} name="Profit" />
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
 
-      {/* Sector Analysis & Portfolio Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sector Performance */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Sector Performance Analysis</h3>
-          <div className="space-y-4">
-            {sectorAnalysis.map((sector, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{sector.sector}</h4>
-                  <span className="text-sm text-gray-500">{sector.clients} clients</span>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Revenue</p>
-                    <p className="font-semibold">${sector.revenue.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Margin</p>
-                    <p className="font-semibold text-green-600">{sector.margin}%</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">ROI</p>
-                    <p className="font-semibold text-blue-600">{sector.roi}%</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Portfolio Allocation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Allocation</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+        {/* Asset Allocation */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Asset Allocation</CardTitle>
+            <CardDescription>Portfolio distribution across asset classes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={portfolioData}
+                  data={assetAllocationData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
+                  outerRadius={80}
+                  fill="#8884d8"
                   dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}%`}
                 >
-                  {portfolioData.map((entry, index) => (
+                  {assetAllocationData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: number, name: string) => [`${value}%`, name]}
-                />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            {portfolioData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-gray-600">{item.name}</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-medium text-gray-900">{item.value}%</span>
-                  <span className="block text-xs text-gray-500">${item.amount.toLocaleString()}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Financial Forecasting & Calculation Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Financial Forecasting */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Forecasting</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={forecastData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="period" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                  formatter={(value: number) => [`$${value?.toLocaleString()}`, '']}
-                />
-                <Area type="monotone" dataKey="actual" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
-                <Area type="monotone" dataKey="forecast" stroke="#10B981" fill="#10B981" fillOpacity={0.2} strokeDasharray="5 5" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Cash Flow Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cash Flow Analysis</CardTitle>
+          <CardDescription>24-month cash flow trend showing inflows, outflows, and net position</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={400}>
+            <AreaChart data={cashFlowData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="period" />
+              <YAxis />
+              <Tooltip formatter={(value, name) => [`$${value.toLocaleString()}`, name]} />
+              <Legend />
+              <Area type="monotone" dataKey="inflow" stackId="1" stroke="#10b981" fill="#10b981" name="Inflow" />
+              <Area type="monotone" dataKey="outflow" stackId="2" stroke="#ef4444" fill="#ef4444" name="Outflow" />
+              <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={3} name="Net Cash Flow" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
-        {/* Calculation Performance Improvements */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Calculation Performance</h3>
-          <div className="space-y-4">
-            {calculationMetrics.map((metric, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{metric.metric}</h4>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div>
-                    <p className="text-gray-500">Before</p>
-                    <p className="font-medium text-red-600">{metric.oldTime}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Now</p>
-                    <p className="font-medium text-green-600">{metric.newTime}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Improvement</p>
-                    <p className="font-semibold text-blue-600">{metric.improvement}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Data Tables */}
+      <Tabs defaultValue="portfolio" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="portfolio">Portfolio Holdings</TabsTrigger>
+          <TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
+          <TabsTrigger value="currencies">Currency Exchange</TabsTrigger>
+        </TabsList>
 
-      {/* Risk Assessment & Compliance */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Assessment & Compliance</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <h4 className="font-medium text-gray-900">Credit Risk</h4>
-            <p className="text-sm text-gray-600 mt-1">Low risk profile</p>
-            <p className="text-lg font-bold text-green-600 mt-2">2.3%</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <BarChart3 className="h-8 w-8 text-blue-600" />
-            </div>
-            <h4 className="font-medium text-gray-900">Market Risk</h4>
-            <p className="text-sm text-gray-600 mt-1">Moderate exposure</p>
-            <p className="text-lg font-bold text-blue-600 mt-2">8.7%</p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <AlertCircle className="h-8 w-8 text-yellow-600" />
-            </div>
-            <h4 className="font-medium text-gray-900">Operational Risk</h4>
-            <p className="text-sm text-gray-600 mt-1">Well controlled</p>
-            <p className="text-lg font-bold text-yellow-600 mt-2">4.1%</p>
-          </div>
-        </div>
-      </div>
+        <TabsContent value="portfolio">
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio Holdings</CardTitle>
+              <CardDescription>Current investment positions and performance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Investment</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Manager</TableHead>
+                    <TableHead className="text-right">Value</TableHead>
+                    <TableHead className="text-right">Allocation</TableHead>
+                    <TableHead className="text-right">Change</TableHead>
+                    <TableHead>Risk</TableHead>
+                    <TableHead className="text-right">Last Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {portfolioData.slice(0, 10).map((holding) => (
+                    <TableRow key={holding.id}>
+                      <TableCell className="font-medium">{holding.name}</TableCell>
+                      <TableCell>{holding.type}</TableCell>
+                      <TableCell>{holding.manager}</TableCell>
+                      <TableCell className="text-right font-semibold">${holding.value.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{holding.allocation}%</TableCell>
+                      <TableCell className="text-right">
+                        <span className={`flex items-center justify-end gap-1 ${holding.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {holding.change >= 0 ? (
+                            <TrendingUp className="w-3 h-3" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3" />
+                          )}
+                          {Math.abs(holding.change).toFixed(2)}%
+                        </span>
+                      </TableCell>
+                      <TableCell>{getRiskBadge(holding.risk)}</TableCell>
+                      <TableCell className="text-right">{holding.lastUpdated.toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transactions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>Latest financial transactions and movements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Transaction ID</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactionData.slice(0, 12).map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-mono text-sm">{transaction.id}</TableCell>
+                      <TableCell>{getTransactionBadge(transaction.type)}</TableCell>
+                      <TableCell className="max-w-xs truncate">{transaction.description}</TableCell>
+                      <TableCell>{transaction.category}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(transaction.amount, transaction.currency)}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(transaction.status)}</TableCell>
+                      <TableCell className="text-right">{transaction.date.toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="currencies">
+          <Card>
+            <CardHeader>
+              <CardTitle>Currency Exchange Rates</CardTitle>
+              <CardDescription>Current exchange rates for multi-currency operations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Currency</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Symbol</TableHead>
+                    <TableHead className="text-right">Rate (vs USD)</TableHead>
+                    <TableHead className="text-right">24h Change</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currencies.map((currency) => {
+                    const change = faker.number.float({ min: -2, max: 2, fractionDigits: 2 });
+                    return (
+                      <TableRow key={currency.code}>
+                        <TableCell className="font-medium">{currency.name}</TableCell>
+                        <TableCell>{currency.code}</TableCell>
+                        <TableCell className="font-semibold">{currency.symbol}</TableCell>
+                        <TableCell className="text-right">{currency.rate.toFixed(4)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={`flex items-center justify-end gap-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {change >= 0 ? (
+                              <TrendingUp className="w-3 h-3" />
+                            ) : (
+                              <TrendingDown className="w-3 h-3" />
+                            )}
+                            {Math.abs(change).toFixed(2)}%
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 
