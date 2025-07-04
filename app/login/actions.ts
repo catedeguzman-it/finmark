@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '../../utils/supabase/server';
-import { createUser, getUserByAuthId, getUserByEmail } from '../../src/db/queries/users';
+import { createUser, getUserByAuthId, getUserByEmail } from '../../db/queries/users';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
