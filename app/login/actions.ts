@@ -3,25 +3,37 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '../../utils/supabase/server';
-import { createUser, getUserByAuthId, getUserByEmail } from '../../db/queries/users';
+import { createUser, getUserByAuthId, getUserByEmail, updateUser } from '../../db/queries/users';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   };
 
+  // Validate input
+  if (!data.email || !data.password) {
+    throw new Error('Email and password are required');
+  }
+
   const { error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
     console.error('Login error:', error);
-    redirect('/error?message=' + encodeURIComponent('Invalid email or password'));
+    
+    // Provide more specific error messages
+    if (error.message.includes('Invalid login credentials')) {
+      throw new Error('Invalid email or password');
+    } else if (error.message.includes('Email not confirmed')) {
+      throw new Error('Please check your email and confirm your account');
+    } else {
+      throw new Error('Login failed. Please try again.');
+    }
   }
 
+  // Only redirect if login was successful
   revalidatePath('/', 'layout');
   redirect('/dashboard');
 }
@@ -29,32 +41,47 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient();
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   };
 
+  // Validate input
+  if (!data.email || !data.password) {
+    throw new Error('Email and password are required');
+  }
+
+  // Check if user already exists in our database
+  const existingUser = await getUserByEmail(data.email);
+  if (existingUser) {
+    throw new Error('An account with this email already exists. Please sign in instead.');
+  }
+
   const { data: authData, error } = await supabase.auth.signUp(data);
 
   if (error) {
     console.error('Signup error:', error);
-    redirect('/error?message=' + encodeURIComponent(error.message));
+    
+    // Provide more specific error messages
+    if (error.message.includes('User already registered')) {
+      throw new Error('An account with this email already exists. Please sign in instead.');
+    } else if (error.message.includes('Password should be at least')) {
+      throw new Error('Password must be at least 6 characters long');
+    } else {
+      throw new Error(error.message || 'Account creation failed. Please try again.');
+    }
   }
 
   // Create user in our database after successful Supabase auth
   if (authData.user) {
-    try {
-      await createUser({
-        authUserId: authData.user.id,
-        email: authData.user.email!,
-        name: authData.user.user_metadata?.full_name || authData.user.email!.split('@')[0],
-      });
-    } catch (dbError) {
-      console.error('Error creating user in database:', dbError);
-      // Continue anyway as the auth user was created successfully
-    }
+    const dbUser = await createUser({
+      authUserId: authData.user.id,
+      email: authData.user.email!,
+      name: authData.user.user_metadata?.full_name || authData.user.email!.split('@')[0],
+    });
+    
+    // If we get here, either user was created or existing user was returned
+    console.log('User synced successfully:', dbUser.email);
   }
 
   revalidatePath('/', 'layout');
@@ -62,31 +89,49 @@ export async function signup(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
-  const supabase = await createClient();
-  
-  // Dynamically determine the site URL
-  const siteUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${siteUrl}/auth/callback`,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
+  try {
+    const supabase = await createClient();
+    const { headers } = await import('next/headers');
+    
+    // Get the origin from request headers for accurate URL construction
+    const headersList = await headers();
+    const host = headersList.get('host');
+    const protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    
+    // Construct the site URL from request headers with fallback to env var
+    let siteUrl: string;
+    if (host) {
+      siteUrl = `${protocol}://${host}`;
+    } else {
+      siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    }
+    
+    console.log('OAuth redirect URL will be:', `${siteUrl}/auth/callback`);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${siteUrl}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
-    },
-  });
+    });
 
-  if (error) {
-    console.error('Google OAuth error:', error);
-    redirect('/error?message=' + encodeURIComponent('Google authentication failed'));
-  }
+    if (error) {
+      console.error('Google OAuth error:', error);
+      throw new Error('Google authentication failed. Please try again.');
+    }
 
-  if (data.url) {
-    redirect(data.url);
+    if (data.url) {
+      redirect(data.url);
+    } else {
+      throw new Error('Failed to initiate Google authentication');
+    }
+  } catch (error) {
+    // Re-throw the error so it can be caught by the client
+    throw error;
   }
 }
 
@@ -110,20 +155,13 @@ export async function syncUserAfterOAuth(authUser: any) {
       const existingUserByEmail = await getUserByEmail(authUser.email);
       
       if (existingUserByEmail) {
-        console.log('Found existing user by email, linking OAuth account');
-        // User exists with this email but different auth method
-        // We should update their authUserId to link the accounts
-        // Note: This is a simplified approach. In production, you might want
-        // to implement a more sophisticated account linking flow
-        
-        // For now, we'll create a new user record as Supabase handles auth linking
-        dbUser = await createUser({
+        console.log('Found existing user by email, updating auth ID');
+        // Update existing user with new auth ID to link accounts
+        dbUser = await updateUser(existingUserByEmail.id, {
           authUserId: authUser.id,
-          email: authUser.email,
           name: authUser.user_metadata?.full_name || 
                 authUser.user_metadata?.name || 
-                existingUserByEmail.name ||
-                authUser.email.split('@')[0],
+                existingUserByEmail.name,
         });
       } else {
         // Create new user record

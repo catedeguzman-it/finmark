@@ -30,14 +30,21 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error
   } = await supabase.auth.getUser();
 
+  // If there's an auth error or no user, redirect to login
   if (
-    !user &&
+    (error || !user) &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth')
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // Clear any invalid session cookies
+    if (error) {
+      supabaseResponse.cookies.delete('sb-access-token');
+      supabaseResponse.cookies.delete('sb-refresh-token');
+    }
+    
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
