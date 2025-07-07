@@ -8,6 +8,13 @@
       "when": 1751601708000,
       "tag": "0000_nice_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751875164020,
+      "tag": "0001_new_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }
