@@ -1,6 +1,6 @@
 /**
  * Get the site URL based on the current environment
- * This handles both client-side and server-side detection
+ * Follows Supabase's recommended pattern for dynamic URLs
  */
 export function getSiteUrl(): string {
   // Check if we're on the client side
@@ -8,19 +8,18 @@ export function getSiteUrl(): string {
     return window.location.origin;
   }
 
-  // Server-side detection
-  // Check for Vercel environment variables first
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  // Check for custom environment variable
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-
-  // Default to localhost for development
-  return 'http://localhost:3000';
+  // Server-side detection following Supabase pattern
+  let url =
+    process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+    'http://localhost:3000/'
+  
+  // Make sure to include `https://` when not localhost.
+  url = url.startsWith('http') ? url : `https://${url}`
+  // Make sure to include a trailing `/`.
+  url = url.endsWith('/') ? url : `${url}/`
+  
+  return url.slice(0, -1); // Remove trailing slash for consistency with origin
 }
 
 /**
@@ -39,6 +38,24 @@ export function getSiteUrlFromHeaders(headers: Headers): string {
 
   // Fallback to environment detection
   return getSiteUrl();
+}
+
+/**
+ * Get URL following Supabase's exact recommended pattern
+ * This is the function from Supabase documentation
+ */
+export function getURL(): string {
+  let url =
+    process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+    'http://localhost:3000/'
+  
+  // Make sure to include `https://` when not localhost.
+  url = url.startsWith('http') ? url : `https://${url}`
+  // Make sure to include a trailing `/`.
+  url = url.endsWith('/') ? url : `${url}/`
+  
+  return url
 }
 
 /**

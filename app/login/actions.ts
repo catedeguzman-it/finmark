@@ -2,8 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createClient } from '../../utils/supabase/server';
-import { createUser, getUserByAuthId, getUserByEmail, updateUser } from '../../db/queries/users';
+import { createClient } from '@/utils/supabase/server';
+import { createUser, getUserByAuthId, getUserByEmail, updateUser } from '@/db/queries/users';
+import { getURL } from '@/utils/site-url';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -22,7 +23,7 @@ export async function login(formData: FormData) {
 
   if (error) {
     console.error('Login error:', error);
-    
+
     // Provide more specific error messages
     if (error.message.includes('Invalid login credentials')) {
       throw new Error('Invalid email or password');
@@ -61,7 +62,7 @@ export async function signup(formData: FormData) {
 
   if (error) {
     console.error('Signup error:', error);
-    
+
     // Provide more specific error messages
     if (error.message.includes('User already registered')) {
       throw new Error('An account with this email already exists. Please sign in instead.');
@@ -79,7 +80,7 @@ export async function signup(formData: FormData) {
       email: authData.user.email!,
       name: authData.user.user_metadata?.full_name || authData.user.email!.split('@')[0],
     });
-    
+
     // If we get here, either user was created or existing user was returned
     console.log('User synced successfully:', dbUser.email);
   }
@@ -91,15 +92,12 @@ export async function signup(formData: FormData) {
 export async function signInWithGoogle() {
   try {
     const supabase = await createClient();
-    const { headers } = await import('next/headers');
-    const { getOAuthRedirectUrl } = await import('../../utils/site-url');
-    
-    // Get the redirect URL based on current request headers
-    const headersList = await headers();
-    const redirectUrl = getOAuthRedirectUrl(headersList);
-    
+    // Get the redirect URL using Supabase's recommended pattern
+    console.log('OAuth redirect URL will be:', getURL());
+    const redirectUrl = `${getURL()}auth/callback`;
+
     console.log('OAuth redirect URL will be:', redirectUrl);
-    
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -138,39 +136,39 @@ export async function signOut() {
 export async function syncUserAfterOAuth(authUser: any) {
   try {
     console.log('Syncing OAuth user:', authUser.email);
-    
+
     // Check if user already exists in our database by auth ID
     let dbUser = await getUserByAuthId(authUser.id);
-    
+
     if (!dbUser) {
       // Check if a user with this email already exists (from email/password signup)
       const existingUserByEmail = await getUserByEmail(authUser.email);
-      
+
       if (existingUserByEmail) {
         console.log('Found existing user by email, updating auth ID');
         // Update existing user with new auth ID to link accounts
         dbUser = await updateUser(existingUserByEmail.id, {
           authUserId: authUser.id,
-          name: authUser.user_metadata?.full_name || 
-                authUser.user_metadata?.name || 
-                existingUserByEmail.name,
+          name: authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            existingUserByEmail.name,
         });
       } else {
         // Create new user record
         dbUser = await createUser({
           authUserId: authUser.id,
           email: authUser.email,
-          name: authUser.user_metadata?.full_name || 
-                authUser.user_metadata?.name || 
-                authUser.email.split('@')[0],
+          name: authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            authUser.email.split('@')[0],
         });
       }
-      
+
       console.log('User created/linked successfully:', dbUser.email);
     } else {
       console.log('User already exists in database:', dbUser.email);
     }
-    
+
     return dbUser;
   } catch (error) {
     console.error('Error syncing user after OAuth:', error);
