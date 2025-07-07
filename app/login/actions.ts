@@ -92,11 +92,19 @@ export async function signup(formData: FormData) {
 export async function signInWithGoogle() {
   try {
     const supabase = await createClient();
+    
     // Get the redirect URL using Supabase's recommended pattern
-    console.log('OAuth redirect URL will be:', getURL());
-    const redirectUrl = `${getURL()}auth/callback`;
-
-    console.log('OAuth redirect URL will be:', redirectUrl);
+    const baseUrl = getURL();
+    const redirectUrl = `${baseUrl}auth/callback`;
+    
+    console.log('🔍 OAuth Debug Info:');
+    console.log('Base URL from getURL():', baseUrl);
+    console.log('Full redirect URL:', redirectUrl);
+    console.log('Environment variables:', {
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
+      VERCEL_URL: process.env.VERCEL_URL,
+    });
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

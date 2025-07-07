@@ -40,3 +40,9 @@ export/
 
 # Generated TypeScript files
 *.tsbuildinfo
+
+# sst
+.sst
+
+# open-next
+.open-next
