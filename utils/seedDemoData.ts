@@ -1,6 +1,21 @@
 import { createClient } from './supabase/client';
+import { seedComprehensiveData } from './seedComprehensiveData';
 
 export const seedDemoData = async (orgId: string) => {
+  console.log('⚠️  seedDemoData is deprecated. Use seedComprehensiveData instead.');
+  
+  // Convert string orgId to number for new function
+  const organizationId = parseInt(orgId, 10);
+  if (isNaN(organizationId)) {
+    console.error('Invalid organization ID:', orgId);
+    return false;
+  }
+  
+  return await seedComprehensiveData(organizationId);
+};
+
+// Legacy function for backward compatibility
+export const seedLegacyFinancialData = async (orgId: string) => {
   const supabase = createClient();
   const demoRows = [
     { month: 'Jan', revenue: 12000, expenses: 8000 },
