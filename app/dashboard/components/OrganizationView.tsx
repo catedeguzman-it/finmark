@@ -46,19 +46,19 @@ export function OrganizationView({ organizations, userProfile, onSelectOrganizat
     <div className="space-y-8">
       <div className="text-center space-y-4">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold text-gray-900">Select Organization</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-foreground">Select Organization</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Choose an organization to access their analytics dashboards and business intelligence tools.
           </p>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 rounded-full bg-green-400"></div>
+            <div className="size-2 rounded-full bg-green-500"></div>
             <span>You have access to {userProfile.assignedOrganizations.length} organizations</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+            <div className="size-2 rounded-full bg-primary"></div>
             <span>Showing {filteredOrganizations.length} results</span>
           </div>
         </div>
@@ -84,11 +84,11 @@ export function OrganizationView({ organizations, userProfile, onSelectOrganizat
 
       {filteredOrganizations.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+          <div className="size-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             <span className="text-2xl">🏢</span>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations found</h3>
-          <p className="text-gray-500">
+          <h3 className="text-lg font-medium text-foreground mb-2">No organizations found</h3>
+          <p className="text-muted-foreground">
             {filters.search || filters.type !== 'all'
               ? 'Try adjusting your search filters.'
               : 'You don\'t have access to any organizations yet.'}

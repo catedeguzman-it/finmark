@@ -186,11 +186,11 @@ export default function FinancialAnalyticsDashboard() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="size-4 mr-2" />
             Export Report
           </Button>
           <Button size="sm">
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="size-4 mr-2" />
             New Investment
           </Button>
         </div>

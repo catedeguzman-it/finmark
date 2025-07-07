@@ -160,11 +160,11 @@ export default function EcommerceDashboard() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
-            <FileText className="w-4 h-4 mr-2" />
+            <FileText className="size-4 mr-2" />
             Export Report
           </Button>
           <Button size="sm">
-            <TrendingUp className="w-4 h-4 mr-2" />
+            <TrendingUp className="size-4 mr-2" />
             View Trends
           </Button>
         </div>
@@ -325,7 +325,7 @@ export default function EcommerceDashboard() {
                       <TableCell className="text-right font-semibold">${product.revenue.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          <Star className="size-4 fill-yellow-400 text-yellow-400" />
                           {product.rating}
                         </div>
                       </TableCell>

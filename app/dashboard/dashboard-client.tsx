@@ -13,11 +13,11 @@ import { DashboardHeader, OrganizationView, DashboardView } from './components';
 
 // Import existing dashboard components
 import ExecutiveOverviewDashboard from '../../components/dashboards/ExecutiveOverviewDashboard';
-import FinancialAnalyticsDashboard from '../../components/dashboards/FinancialAnalyticsDashboard';
+import ImprovedFinancialDashboard from '../../components/dashboards/ImprovedFinancialDashboard';
 import HealthcareDashboard from '../../components/dashboards/HealthcareDashboard';
 import ManufacturingDashboard from '../../components/dashboards/ManufacturingDashboard';
 import MarketingDashboard from '../../components/dashboards/MarketingDashboard';
-import EcommerceDashboard from '../../components/dashboards/EcommerceDashboard';
+import ImprovedEcommerceDashboard from '../../components/dashboards/ImprovedEcommerceDashboard';
 
 interface DashboardClientProps {
   user: User;
@@ -98,7 +98,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       case 'overview':
         return <DashboardWrapper><ExecutiveOverviewDashboard /></DashboardWrapper>;
       case 'financial':
-        return <DashboardWrapper><FinancialAnalyticsDashboard /></DashboardWrapper>;
+        return <DashboardWrapper><ImprovedFinancialDashboard /></DashboardWrapper>;
       case 'healthcare':
         return <DashboardWrapper><HealthcareDashboard /></DashboardWrapper>;
       case 'manufacturing':
@@ -106,7 +106,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       case 'marketing':
         return <DashboardWrapper><MarketingDashboard /></DashboardWrapper>;
       case 'ecommerce':
-        return <DashboardWrapper><EcommerceDashboard /></DashboardWrapper>;
+        return <DashboardWrapper><ImprovedEcommerceDashboard /></DashboardWrapper>;
       default:
         return (
           <div className="text-center py-12">
