@@ -49,7 +49,7 @@ export default function LoginPage() {
               type="email"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#26C6DA] focus:border-transparent placeholder-gray-400 transition duration-150 ease-in-out"
-              placeholder="you@example.com"
+              placeholder="Enter your email"
             />
           </div>
 
