@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { login, signup, signInWithGoogle } from './actions';
@@ -21,6 +21,22 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [mode, setMode] = useState<FormMode>('login');
+
+  // Debug OAuth configuration on page load
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const siteUrl = window.location.origin;
+      const redirectUrl = `${siteUrl}/auth/callback`;
+      console.log('🔍 OAuth Debug Info:');
+      console.log('Current site URL:', siteUrl);
+      console.log('Expected redirect URL:', redirectUrl);
+      console.log('Environment:', {
+        hostname: window.location.hostname,
+        isLocalhost: window.location.hostname === 'localhost',
+        isVercel: window.location.hostname.includes('vercel.app'),
+      });
+    }
+  }, []);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),

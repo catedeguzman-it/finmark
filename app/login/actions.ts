@@ -92,26 +92,18 @@ export async function signInWithGoogle() {
   try {
     const supabase = await createClient();
     const { headers } = await import('next/headers');
+    const { getOAuthRedirectUrl } = await import('../../utils/site-url');
     
-    // Get the origin from request headers for accurate URL construction
+    // Get the redirect URL based on current request headers
     const headersList = await headers();
-    const host = headersList.get('host');
-    const protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const redirectUrl = getOAuthRedirectUrl(headersList);
     
-    // Construct the site URL from request headers with fallback to env var
-    let siteUrl: string;
-    if (host) {
-      siteUrl = `${protocol}://${host}`;
-    } else {
-      siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    }
-    
-    console.log('OAuth redirect URL will be:', `${siteUrl}/auth/callback`);
+    console.log('OAuth redirect URL will be:', redirectUrl);
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${siteUrl}/auth/callback`,
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
