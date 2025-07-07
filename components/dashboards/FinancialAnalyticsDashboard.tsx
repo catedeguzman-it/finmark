@@ -2,35 +2,31 @@
 
 import React from 'react';
 import { faker } from '@faker-js/faker';
+import { showExportOptions, showDummyAction, type ExportData } from '@/utils/exportUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+
 import { 
   DollarSign, 
   TrendingUp, 
   TrendingDown,
-  PieChart as PieChartIcon,
   Wallet,
-  CreditCard,
   Building,
-  FileText,
   Download,
   Plus,
   Activity
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  BarChart,
   Bar,
   PieChart,
   Pie,
@@ -176,6 +172,35 @@ export default function FinancialAnalyticsDashboard() {
     return `${currencyInfo?.symbol || '$'}${amount.toLocaleString()}`;
   };
 
+  const handleExportReport = () => {
+    const exportData: ExportData = {
+      title: 'Financial Analytics Report',
+      subtitle: 'Comprehensive financial insights and portfolio management',
+      data: portfolioData.slice(0, 10),
+      columns: [
+        { header: 'Investment', dataKey: 'name' },
+        { header: 'Type', dataKey: 'type' },
+        { header: 'Manager', dataKey: 'manager' },
+        { header: 'Value', dataKey: 'value' },
+        { header: 'Allocation %', dataKey: 'allocation' },
+        { header: 'Change %', dataKey: 'change' },
+        { header: 'Risk', dataKey: 'risk' },
+        { header: 'Last Updated', dataKey: 'lastUpdated' }
+      ],
+      summary: [
+        { label: 'Total Portfolio Value', value: `$${totalPortfolioValue.toLocaleString()}` },
+        { label: 'Annual Revenue', value: `$${totalRevenue.toLocaleString()}` },
+        { label: 'Profit Margin', value: `${profitMargin.toFixed(1)}%` },
+        { label: 'Avg Monthly Revenue', value: `$${avgMonthlyRevenue.toLocaleString()}` }
+      ]
+    };
+    showExportOptions(exportData);
+  };
+
+  const handleNewInvestment = () => {
+    showDummyAction('New Investment Created');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -185,11 +210,11 @@ export default function FinancialAnalyticsDashboard() {
           <p className="text-gray-600 mt-1">Comprehensive financial insights and portfolio management</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportReport}>
             <Download className="size-4 mr-2" />
             Export Report
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleNewInvestment}>
             <Plus className="size-4 mr-2" />
             New Investment
           </Button>

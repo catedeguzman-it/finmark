@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { faker } from '@faker-js/faker';
+import { showExportOptions, showDummyAction, type ExportData } from '@/utils/exportUtils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MetricCard } from '@/components/ui/metric-card';
@@ -115,6 +116,35 @@ export default function ImprovedEcommerceDashboard() {
     );
   };
 
+  const handleExportReport = () => {
+    const exportData: ExportData = {
+      title: 'E-commerce Analytics Report',
+      subtitle: 'Multi-platform sales tracking and performance insights',
+      data: productData.slice(0, 10),
+      columns: [
+        { header: 'Product', dataKey: 'name' },
+        { header: 'Category', dataKey: 'category' },
+        { header: 'Platform', dataKey: 'platform' },
+        { header: 'Price', dataKey: 'price' },
+        { header: 'Sold', dataKey: 'sold' },
+        { header: 'Revenue', dataKey: 'revenue' },
+        { header: 'Rating', dataKey: 'rating' },
+        { header: 'Stock', dataKey: 'stock' }
+      ],
+      summary: [
+        { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}` },
+        { label: 'Total Orders', value: totalOrders.toLocaleString() },
+        { label: 'Total Customers', value: totalCustomers.toLocaleString() },
+        { label: 'Avg Order Value', value: `$${avgOrderValue.toFixed(2)}` }
+      ]
+    };
+    showExportOptions(exportData);
+  };
+
+  const handleViewTrends = () => {
+    showDummyAction('Trends Analysis Opened');
+  };
+
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
@@ -123,11 +153,11 @@ export default function ImprovedEcommerceDashboard() {
         description="Multi-platform sales tracking and performance insights"
         action={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExportReport}>
               <FileText className="size-4 mr-2" />
               Export Report
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={handleViewTrends}>
               <TrendingUp className="size-4 mr-2" />
               View Trends
             </Button>

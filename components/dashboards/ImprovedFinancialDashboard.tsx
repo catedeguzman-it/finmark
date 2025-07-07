@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { faker } from '@faker-js/faker';
+import { showExportOptions, showDummyAction, type ExportData } from '@/utils/exportUtils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MetricCard } from '@/components/ui/metric-card';
@@ -117,6 +118,33 @@ export default function ImprovedFinancialDashboard() {
     );
   };
 
+  const handleExportReport = () => {
+    const exportData: ExportData = {
+      title: 'Financial Analytics Report',
+      subtitle: 'Comprehensive financial insights and portfolio management',
+      data: portfolioData.slice(0, 10),
+      columns: [
+        { header: 'Investment', dataKey: 'name' },
+        { header: 'Type', dataKey: 'type' },
+        { header: 'Value', dataKey: 'value' },
+        { header: 'Allocation %', dataKey: 'allocation' },
+        { header: 'Change %', dataKey: 'change' },
+        { header: 'Risk', dataKey: 'risk' }
+      ],
+      summary: [
+        { label: 'Total Portfolio Value', value: `$${totalPortfolioValue.toLocaleString()}` },
+        { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}` },
+        { label: 'Profit Margin', value: `${profitMargin.toFixed(1)}%` },
+        { label: 'Avg Monthly Revenue', value: `$${avgMonthlyRevenue.toLocaleString()}` }
+      ]
+    };
+    showExportOptions(exportData);
+  };
+
+  const handleNewInvestment = () => {
+    showDummyAction('New Investment Created');
+  };
+
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
@@ -125,11 +153,11 @@ export default function ImprovedFinancialDashboard() {
         description="Comprehensive financial insights and portfolio management"
         action={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExportReport}>
               <Download className="size-4 mr-2" />
               Export Report
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={handleNewInvestment}>
               <Plus className="size-4 mr-2" />
               New Investment
             </Button>

@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { useRouter } from 'next/navigation';
+import { useAdminMode } from '@/hooks/use-admin-mode';
+import { AdminFloatingButton } from '@/components/ui/admin-floating-button';
+import { AdminPanel } from '@/components/ui/admin-panel';
+import { showDummyAction } from '@/utils/exportUtils';
 
 // Import types and data
 import { Organization, Dashboard, UserProfile } from './types';
@@ -29,7 +32,7 @@ type ViewState =
   | { type: 'dashboard'; organization: Organization; dashboard: Dashboard };
 
 export default function DashboardClient({ user }: DashboardClientProps) {
-  const router = useRouter();
+  const { isAdminMode } = useAdminMode();
   
   // Get user profile
   const userProfile: UserProfile = useMemo(() => {
@@ -42,6 +45,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   // View state management
   const [viewState, setViewState] = useState<ViewState>({ type: 'organizations' });
+  
+  // Admin state management
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [userAssignedOrgs, setUserAssignedOrgs] = useState<string[]>(
+    userProfile.assignedOrganizations || []
+  );
 
   // Navigation handlers
   const handleSelectOrganization = (organization: Organization) => {
@@ -70,6 +79,41 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       });
     }
   };
+
+  // Admin functionality handlers
+  const handleToggleAdminPanel = () => {
+    setIsAdminPanelOpen(!isAdminPanelOpen);
+  };
+
+  const handleAssignOrganization = (orgId: string) => {
+    if (!userAssignedOrgs.includes(orgId)) {
+      setUserAssignedOrgs([...userAssignedOrgs, orgId]);
+      showDummyAction(`Organization assigned successfully`);
+    }
+  };
+
+  const handleUnassignOrganization = (orgId: string) => {
+    setUserAssignedOrgs(userAssignedOrgs.filter(id => id !== orgId));
+    showDummyAction(`Organization unassigned successfully`);
+  };
+
+  // Update user profile with current assignments
+  const updatedUserProfile: UserProfile = {
+    ...userProfile,
+    assignedOrganizations: userAssignedOrgs
+  };
+
+  // Listen for close admin panel events
+  useEffect(() => {
+    const handleCloseAdminPanel = () => {
+      setIsAdminPanelOpen(false);
+    };
+
+    window.addEventListener('closeAdminPanel', handleCloseAdminPanel);
+    return () => {
+      window.removeEventListener('closeAdminPanel', handleCloseAdminPanel);
+    };
+  }, []);
 
   // Render individual dashboard component
   const renderDashboard = (dashboard: Dashboard, organization: Organization) => {
@@ -125,13 +169,13 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      <DashboardHeader userProfile={userProfile} />
+      <DashboardHeader userProfile={updatedUserProfile} />
       
       <main className="max-w-7xl mx-auto px-6 py-8">
         {viewState.type === 'organizations' && (
           <OrganizationView
             organizations={organizations}
-            userProfile={userProfile}
+            userProfile={updatedUserProfile}
             onSelectOrganization={handleSelectOrganization}
           />
         )}
@@ -140,7 +184,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           <DashboardView
             organization={viewState.organization}
             dashboards={dashboards}
-            userProfile={userProfile}
+            userProfile={updatedUserProfile}
             onAccessDashboard={handleAccessDashboard}
             onBack={handleBackToOrganizations}
           />
@@ -152,6 +196,23 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           </div>
         )}
       </main>
+
+      {/* Admin Mode Components */}
+      {isAdminMode && (
+        <>
+          <AdminFloatingButton 
+            onClick={handleToggleAdminPanel}
+            isOpen={isAdminPanelOpen}
+          />
+          <AdminPanel
+            isOpen={isAdminPanelOpen}
+            organizations={organizations}
+            userProfile={updatedUserProfile}
+            onAssignOrganization={handleAssignOrganization}
+            onUnassignOrganization={handleUnassignOrganization}
+          />
+        </>
+      )}
     </div>
   );
 } 
