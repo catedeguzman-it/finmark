@@ -1,11 +1,20 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getUserByAuthId } from '@/db/queries/users';
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  // Allow access to public routes without auth checks
+  const publicRoutes = ['/login', '/auth', '/bootstrap', '/api/'];
+  const isPublicRoute = publicRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  );
+
+  if (isPublicRoute) {
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,12 +44,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // If there's an auth error or no user, redirect to login
-  if (
-    (error || !user) &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/api/')
-  ) {
+  if (error || !user) {
     // Clear any invalid session cookies
     if (error) {
       supabaseResponse.cookies.delete('sb-access-token');
@@ -50,42 +54,6 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
-  }
-
-  // Check for onboarding
-  if (user && !request.nextUrl.pathname.startsWith('/onboarding') && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth') && !request.nextUrl.pathname.startsWith('/api/')) {
-    try {
-      const dbUser = await getUserByAuthId(user.id);
-      if (!dbUser) {
-        // User exists in Supabase auth but not in our database - redirect to onboarding
-        console.log(`User ${user.id} not found in database, redirecting to onboarding`);
-        const url = request.nextUrl.clone();
-        url.pathname = '/onboarding';
-        return NextResponse.redirect(url);
-      }
-      if (!dbUser.isOnboarded) {
-        console.log(`User ${user.id} not onboarded, redirecting to onboarding`);
-        const url = request.nextUrl.clone();
-        url.pathname = '/onboarding';
-        return NextResponse.redirect(url);
-      }
-    } catch (error) {
-      console.error('Error checking user onboarding status:', error);
-      
-      // Check if it's a connection error vs other database error
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('Failed query') || errorMessage.includes('connection')) {
-        console.error('Database connection issue detected, allowing request to proceed');
-        // For connection issues, let the request proceed rather than redirect
-        // The individual pages can handle the database connection issues
-        return supabaseResponse;
-      }
-      
-      // For other errors, redirect to onboarding to be safe
-      const url = request.nextUrl.clone();
-      url.pathname = '/onboarding';
-      return NextResponse.redirect(url);
-    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

@@ -1,91 +1,141 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { getUserProfile } from '@/app/dashboard/data';
-import { DashboardHeader } from '@/app/dashboard/components/DashboardHeader';
+import { SelectUser } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ComponentLoading } from '@/components/ui/loading';
+import { AppNavbar } from '@/components/ui/app-navbar';
+import { Badge } from '@/components/ui/badge';
 
 interface ProfileClientProps {
   user: User;
+  dbUser: SelectUser;
 }
 
-export default function ProfileClient({ user }: ProfileClientProps) {
-  const supabase = createClient();
-  const [data, setData] = useState<any[]>([]);
+export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
+  const [allUsers, setAllUsers] = useState<SelectUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
-      const { data: users, error } = await supabase.from('users').select('*');
-      if (error) {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const users = await response.json();
+          setAllUsers(users);
+        }
+      } catch (error) {
         console.error('Error fetching users:', error);
-      } else {
-        setData(users || []);
       }
       setLoading(false);
     };
 
     fetchUsers();
-  }, [supabase]);
+  }, []);
 
-  // Sign out handled in DashboardHeader
+  const getRoleBadgeColor = (role: string | null) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'manager':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'analyst':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'member':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
-        <Skeleton className="h-32 w-32 rounded-full animate-pulse" />
-        <p className="mt-4 text-muted-foreground">Loading profile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+        <AppNavbar user={dbUser} showBackButton backUrl="/dashboard" />
+        <ComponentLoading text="Loading profile..." />
       </div>
     );
   }
 
-  const userProfile = getUserProfile(user.email);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      <DashboardHeader userProfile={userProfile} />
+      <AppNavbar user={dbUser} showBackButton backUrl="/dashboard" title="User Profile" />
+
       <main className="max-w-7xl mx-auto px-6 py-8">
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Your Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p><span className="font-medium">Email:</span> {user.email}</p>
-            <p><span className="font-medium">User ID:</span> {user.id}</p>
-            <p><span className="font-medium">Last Sign In:</span> {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}</p>
-            <p><span className="font-medium">Name:</span> {userProfile.name}</p>
-            <p><span className="font-medium">Position:</span> {userProfile.position}</p>
-            <p><span className="font-medium">Role:</span> {userProfile.role}</p>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Full Name</p>
+                <p className="text-base">{dbUser.name || 'Not set'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Email</p>
+                <p className="text-base">{dbUser.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Position</p>
+                <p className="text-base">{dbUser.position || 'Not set'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Role</p>
+                <Badge 
+                  variant="outline" 
+                  className={getRoleBadgeColor(dbUser.role)}
+                >
+                  {dbUser.role ? dbUser.role.charAt(0).toUpperCase() + dbUser.role.slice(1) : 'Member'}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Member Since</p>
+                <p className="text-base">{new Date(dbUser.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Last Sign In</p>
+                <p className="text-base">{user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>All Users</CardTitle>
+            <CardTitle>Organization Members</CardTitle>
           </CardHeader>
           <CardContent>
-            {data.length === 0 ? (
-              <p className="text-center text-muted-foreground">No users found.</p>
+            {allUsers.length === 0 ? (
+              <p className="text-center text-muted-foreground">No other users found.</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>ID</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.map((u) => (
+                  {allUsers.map((u) => (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.name || 'No name'}</TableCell>
+                      <TableCell className="font-medium">{u.name || 'Unknown'}</TableCell>
                       <TableCell>{u.email}</TableCell>
-                      <TableCell>{u.id}</TableCell>
+                      <TableCell>{u.position || 'Not set'}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getRoleBadgeColor(u.role)}`}
+                        >
+                          {u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Member'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

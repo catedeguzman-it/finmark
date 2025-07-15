@@ -8,13 +8,15 @@ import { AdminPanel } from '@/components/ui/admin-panel';
 import { showDummyAction } from '@/utils/exportUtils';
 import { UserPermissionsProvider } from '@/hooks/use-user-permissions';
 import { RoleBasedDashboard } from '@/components/RoleBasedDashboard';
+import { AppNavbar } from '@/components/ui/app-navbar';
+import { SelectUser } from '@/db/schema';
 
 // Import types and data
 import { Organization, Dashboard, UserProfile } from './types';
 import { organizations, dashboards, getUserProfile } from './data';
 
 // Import components
-import { DashboardHeader, OrganizationView, DashboardView } from './components';
+import { OrganizationView, DashboardView } from './components';
 
 // Import existing dashboard components
 import ExecutiveOverviewDashboard from '../../components/dashboards/ExecutiveOverviewDashboard';
@@ -26,6 +28,7 @@ import ImprovedEcommerceDashboard from '../../components/dashboards/ImprovedEcom
 
 interface DashboardClientProps {
   user: User;
+  dbUser: SelectUser;
 }
 
 type ViewState = 
@@ -33,7 +36,7 @@ type ViewState =
   | { type: 'dashboards'; organization: Organization }
   | { type: 'dashboard'; organization: Organization; dashboard: Dashboard };
 
-export default function DashboardClient({ user }: DashboardClientProps) {
+export default function DashboardClient({ user, dbUser }: DashboardClientProps) {
   const { isAdminMode } = useAdminMode();
   
   // Get user profile
@@ -172,7 +175,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   return (
     <UserPermissionsProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-        <DashboardHeader userProfile={updatedUserProfile} />
+        <AppNavbar user={dbUser} />
         
         <main className="max-w-7xl mx-auto px-6 py-8">
           <RoleBasedDashboard>

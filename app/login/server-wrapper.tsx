@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
-import { hasAnyUsers } from '../../db/queries/users';
-import LoginClient from './login-client';
+import { hasAnyUsers } from '@/db/queries/users';
+import LoginPage from './page';
 
-export default async function LoginPage() {
+export default async function LoginServerWrapper() {
   // Check if system needs bootstrap first
   try {
     const systemHasUsers = await hasAnyUsers();
@@ -18,5 +18,5 @@ export default async function LoginPage() {
     }
   }
 
-  return <LoginClient />;
+  return <LoginPage />;
 }

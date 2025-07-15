@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { db } from '../index';
 import { InsertUser, SelectUser, usersTable } from '../schema';
 
@@ -69,4 +69,14 @@ export async function updateUser(id: SelectUser['id'], data: Partial<Omit<Select
 
 export async function deleteUser(id: SelectUser['id']) {
   await db.delete(usersTable).where(eq(usersTable.id, id));
+}
+
+export async function hasAnyUsers(): Promise<boolean> {
+  try {
+    const [result] = await db.select({ count: count() }).from(usersTable);
+    return result.count > 0;
+  } catch (error) {
+    console.error('Failed to check if users exist:', error);
+    throw error;
+  }
 } 
