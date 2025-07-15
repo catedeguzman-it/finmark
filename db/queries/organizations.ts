@@ -46,4 +46,36 @@ export async function updateOrganization(id: SelectOrganization['id'], data: Par
 
 export async function getAllOrganizations(): Promise<SelectOrganization[]> {
   return await db.select().from(organizationsTable).orderBy(organizationsTable.createdAt);
+}
+
+export async function removeUserFromOrganization(userId: number, organizationId: number) {
+  const { and } = await import('drizzle-orm');
+  
+  await db.delete(userOrganizationsTable)
+    .where(
+      and(
+        eq(userOrganizationsTable.userId, userId),
+        eq(userOrganizationsTable.organizationId, organizationId)
+      )
+    );
+}
+
+export async function getUsersWithMultipleOrganizations() {
+  const { usersTable } = await import('../schema');
+  
+  return db
+    .select({
+      user: usersTable,
+      organizations: {
+        id: organizationsTable.id,
+        name: organizationsTable.name,
+        type: organizationsTable.type,
+        isDefault: userOrganizationsTable.isDefault,
+        joinedAt: userOrganizationsTable.createdAt,
+      }
+    })
+    .from(usersTable)
+    .leftJoin(userOrganizationsTable, eq(usersTable.id, userOrganizationsTable.userId))
+    .leftJoin(organizationsTable, eq(userOrganizationsTable.organizationId, organizationsTable.id))
+    .orderBy(usersTable.createdAt);
 } 

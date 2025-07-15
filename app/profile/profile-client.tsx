@@ -11,15 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MemberManagement } from '@/components/MemberManagement';
+import { EnhancedMemberManagement } from '@/components/EnhancedMemberManagement';
 import { canManageUsers } from '@/lib/rbac';
-import { getOrganizationMembers, updateProfile } from './actions';
+import { getOrganizationMembersWithMultipleOrgs, updateProfile } from './actions';
 import { Edit, Save, X } from 'lucide-react';
 
-interface MemberWithOrganization {
+interface MemberWithOrganizations {
   user: SelectUser;
-  organization: {
+  organizations: {
     id: number | null;
+    name: string | null;
+    type: string | null;
     isDefault: boolean | null;
     joinedAt: Date | null;
   };
@@ -157,8 +159,8 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
-  const [allUsers, setAllUsers] = useState<UserWithOrganization[]>([]);
-  const [members, setMembers] = useState<MemberWithOrganization[]>([]);
+  const [allUsers, setAllUsers] = useState<MemberWithOrganizations[]>([]);
+  const [members, setMembers] = useState<MemberWithOrganizations[]>([]);
   const [organizations, setOrganizations] = useState<SelectOrganization[]>([]);
   const [loading, setLoading] = useState(true);
   const isAdmin = canManageUsers(dbUser.role as any);
@@ -169,16 +171,20 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
       try {
         if (isAdmin) {
           // Fetch organization members and organizations for admin users
-          const { members: orgMembers, organizations: orgs } = await getOrganizationMembers();
+          const { members: orgMembers, organizations: orgs } = await getOrganizationMembersWithMultipleOrgs();
           // Transform the data to match our interface
           const transformedMembers = orgMembers.map(member => ({
             user: member.user,
-            organization: member.organization ? {
-              id: member.organization.id,
-              isDefault: member.organization.isDefault,
-              joinedAt: member.organization.joinedAt
+            organizations: member.organizations ? {
+              id: member.organizations.id,
+              name: member.organizations.name,
+              type: member.organizations.type,
+              isDefault: member.organizations.isDefault,
+              joinedAt: member.organizations.joinedAt
             } : {
               id: null,
+              name: null,
+              type: null,
               isDefault: null,
               joinedAt: null
             }
@@ -264,7 +270,7 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
         </Card>
 
         {isAdmin ? (
-          <MemberManagement 
+          <EnhancedMemberManagement 
             members={members}
             organizations={organizations}
             currentUserId={dbUser.id}
@@ -290,7 +296,7 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
               <Card>
                 <CardContent className="p-4">
                   <div className="text-2xl font-bold text-purple-600">
-                    {allUsers.filter(u => u.organization?.id).length}
+                    {allUsers.filter(u => u.organizations?.id).length}
                   </div>
                   <p className="text-sm text-muted-foreground">Assigned to Orgs</p>
                 </CardContent>
@@ -340,21 +346,21 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {userWithOrg.organization?.name ? (
-                            <span className="text-sm font-medium">{userWithOrg.organization.name}</span>
+                          {userWithOrg.organizations?.name ? (
+                            <span className="text-sm font-medium">{userWithOrg.organizations.name}</span>
                           ) : (
                             <span className="text-sm text-muted-foreground">Not assigned</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          {userWithOrg.organization?.isDefault ? (
+                          {userWithOrg.organizations?.isDefault ? (
                             <Badge 
                               variant="outline" 
                               className="text-xs bg-blue-100 text-blue-800 border-blue-200"
                             >
                               Default
                             </Badge>
-                          ) : userWithOrg.organization ? (
+                          ) : userWithOrg.organizations ? (
                             <span className="text-sm text-muted-foreground">Assigned</span>
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>

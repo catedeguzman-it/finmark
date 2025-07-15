@@ -22,8 +22,8 @@ export async function setupUserFinancials() {
     description: 'Personal financial management',
   });
 
-  // Add user to the organization as admin
-  await addUserToOrganization(user.profile.id, organization.id, 'admin');
+  // Add user to the organization as default
+  await addUserToOrganization(user.profile.id, organization.id, true);
 
   // Create default accounts
   const checkingAccount = await db.insert(accountsTable).values({

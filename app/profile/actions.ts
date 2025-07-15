@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/utils/supabase/server';
 import { getUserByAuthId, getAllUsersWithOrganizations, updateUser } from '@/db/queries/users';
-import { getAllOrganizations, addUserToOrganization } from '@/db/queries/organizations';
+import { getAllOrganizations, addUserToOrganization, removeUserFromOrganization, getUsersWithMultipleOrganizations } from '@/db/queries/organizations';
 import { canManageUsers } from '@/lib/rbac';
 
 export async function inviteUserToSystem(formData: FormData) {
@@ -194,6 +194,64 @@ export async function getOrganizationMembers() {
 
   try {
     const members = await getAllUsersWithOrganizations();
+    const organizations = await getAllOrganizations();
+    
+    return { members, organizations };
+  } catch (error) {
+    console.error('Error fetching organization members:', error);
+    throw new Error('Failed to fetch organization members');
+  }
+}
+
+export async function removeUserFromOrganizationAction(formData: FormData) {
+  const supabase = await createClient();
+
+  // Get current user and verify admin permissions
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const dbUser = await getUserByAuthId(user.id);
+  if (!dbUser) throw new Error('User not found');
+
+  // Check if user has admin permissions
+  if (!canManageUsers(dbUser.role as any)) {
+    throw new Error('Insufficient permissions to remove users from organizations');
+  }
+
+  const userId = parseInt(formData.get('userId') as string);
+  const organizationId = parseInt(formData.get('organizationId') as string);
+
+  if (!userId || !organizationId) {
+    throw new Error('Missing required fields');
+  }
+
+  try {
+    await removeUserFromOrganization(userId, organizationId);
+    
+    revalidatePath('/profile');
+    return { 
+      success: true, 
+      message: 'User removed from organization successfully' 
+    };
+
+  } catch (error) {
+    console.error('Error removing user from organization:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to remove user from organization');
+  }
+}
+
+export async function getOrganizationMembersWithMultipleOrgs() {
+  const supabase = await createClient();
+
+  // Get current user and verify admin permissions
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const dbUser = await getUserByAuthId(user.id);
+  if (!dbUser) throw new Error('User not found');
+
+  try {
+    const members = await getUsersWithMultipleOrganizations();
     const organizations = await getAllOrganizations();
     
     return { members, organizations };
