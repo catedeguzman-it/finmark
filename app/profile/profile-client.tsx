@@ -1,7 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { createClient } from '../../utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { getUserProfile } from '@/app/dashboard/data';
+import { DashboardHeader } from '@/app/dashboard/components/DashboardHeader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProfileClientProps {
   user: User;
@@ -27,63 +33,67 @@ export default function ProfileClient({ user }: ProfileClientProps) {
     fetchUsers();
   }, [supabase]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-  };
+  // Sign out handled in DashboardHeader
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#26C6DA]"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <Skeleton className="h-32 w-32 rounded-full animate-pulse" />
+        <p className="mt-4 text-muted-foreground">Loading profile...</p>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#f5f5f5] p-6 text-[#2E2E2E] font-sans">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-[#26C6DA]">User Profile</h1>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-          >
-            Sign Out
-          </button>
-        </div>
+  const userProfile = getUserProfile(user.email);
 
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Your Information</h2>
-          <div className="space-y-2">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <DashboardHeader userProfile={userProfile} />
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Your Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
             <p><span className="font-medium">Email:</span> {user.email}</p>
             <p><span className="font-medium">User ID:</span> {user.id}</p>
             <p><span className="font-medium">Last Sign In:</span> {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}</p>
-          </div>
-        </div>
+            <p><span className="font-medium">Name:</span> {userProfile.name}</p>
+            <p><span className="font-medium">Position:</span> {userProfile.position}</p>
+            <p><span className="font-medium">Role:</span> {userProfile.role}</p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold">All Users</h2>
-          </div>
-          {data.length === 0 ? (
-            <p className="p-6 text-center text-gray-500">No users found.</p>
-          ) : (
-            <ul className="divide-y divide-gray-200">
-              {data.map((u) => (
-                <li key={u.id} className="p-4 hover:bg-gray-50 transition">
-                  <p className="text-lg font-medium">{u.name || 'No name'}</p>
-                  <p className="text-sm text-gray-500">{u.email}</p>
-                  <p className="text-xs text-gray-400">ID: {u.id}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>All Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.length === 0 ? (
+              <p className="text-center text-muted-foreground">No users found.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>ID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.name || 'No name'}</TableCell>
+                      <TableCell>{u.email}</TableCell>
+                      <TableCell>{u.id}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 } 

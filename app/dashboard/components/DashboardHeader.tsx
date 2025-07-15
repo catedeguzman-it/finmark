@@ -1,6 +1,7 @@
 'use client';
 
 import { UserProfile } from '../types';
+import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,11 +46,15 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
           </div>
           
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
+            <Link href="/profile" className="flex items-center space-x-3 hover:opacity-80 transition">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs font-medium">
+                  {userProfile.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
                 <div className="flex items-center space-x-2">
-                  <p className="text-xs text-gray-500">{userProfile.position}</p>
+                  <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
                   <Badge 
                     variant="outline" 
                     className={`text-xs ${getRoleBadgeColor(userProfile.role)}`}
@@ -57,14 +62,9 @@ export function DashboardHeader({ userProfile }: DashboardHeaderProps) {
                     {userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1)}
                   </Badge>
                 </div>
+                <p className="text-xs text-gray-500">{userProfile.position}</p>
               </div>
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs font-medium">
-                  {userProfile.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            
+            </Link>
             <Button 
               variant="outline" 
               size="sm" 

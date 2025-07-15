@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const links = [
   { label: 'Problem', href: '#problem' },
@@ -17,16 +18,28 @@ export default function Navbar() {
         <Link href="/" className="text-xl font-bold text-foreground">
           FinMark
         </Link>
-        <div className="flex gap-6">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
+        <div className="flex items-center gap-8">
+          <div className="flex gap-6">
+            {links.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/placeholder-avatar.jpg" />
+              <AvatarFallback>JD</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">John Doe</p>
+              <p className="text-xs text-muted-foreground">Developer</p>
+            </div>
+          </div>
         </div>
       </div>
     </nav>

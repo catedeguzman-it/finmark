@@ -8,16 +8,21 @@
 - `npm run db:migrate` - Run database migrations
 - `npm run db:push` - Push schema changes to database
 - `npm run db:studio` - Open Drizzle Studio
+- No dedicated lint script; install ESLint and run `npx eslint .` for linting
+- No test framework; if adding Jest: `npm test` for all, `npm test -- path/to/test.spec.ts` for single
 
 ## Code Style & Conventions
-- **TypeScript**: Strict mode enabled, use proper types
+- **TypeScript**: Strict mode enabled, use proper types and inference
 - **Imports**: Use `@/` alias for root imports (e.g., `@/components/ui/button`)
-- **Components**: Use PascalCase for component names and files
-- **Functions**: Use camelCase, prefer arrow functions for components
-- **Server Actions**: Mark with `'use server'` directive, handle errors with redirects
-- **Client Components**: Mark with `'use client'` directive when needed
-- **Styling**: Use Tailwind CSS with `cn()` utility from `@/lib/utils`
-- **UI Components**: Use shadcn/ui components from `@/components/ui/`
-- **Database**: Use Drizzle ORM with proper type inference
-- **Auth**: Use Supabase auth with server-side client creation
-- **Error Handling**: Use try/catch blocks, log errors, redirect on failures
+- **Components**: PascalCase names/files; prefer arrow functions for definitions
+- **Functions**: camelCase; use async/await, avoid callbacks
+- **Server Actions**: `'use server'` directive; try/catch with error redirects
+- **Client Components**: `'use client'` for hooks; optimize for performance
+- **Styling**: Tailwind with `cn()` from `@/lib/utils`; consistent class ordering
+- **UI Components**: shadcn/ui from `@/components/ui/`; customize via props
+- **Database**: Drizzle ORM, type-safe queries from `@/db/schema.ts`
+- **Auth**: Supabase SSR; handle sessions in middleware
+- **Error Handling**: try/catch, console.log errors, use Next.js error.tsx
+- **Formatting**: 2-space indentation; no semicolons if using automatic
+- **Naming**: Descriptive, consistent; e.g., use 'handle' prefix for event handlers
+- No Cursor/Copilot rules found in .cursor/, .cursorrules, or .github/
