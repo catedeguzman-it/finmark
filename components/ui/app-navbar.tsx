@@ -46,7 +46,7 @@ export function AppNavbar({ user, showBackButton = false, backUrl = '/dashboard'
 
   const getPageTitle = () => {
     if (title) return title;
-    
+
     switch (pathname) {
       case '/dashboard':
         return 'FinMark Analytics';
@@ -63,16 +63,16 @@ export function AppNavbar({ user, showBackButton = false, backUrl = '/dashboard'
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {showBackButton ? (
-              <Link 
-                href={backUrl} 
+              <Link
+                href={backUrl}
                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="text-sm font-medium">Back</span>
               </Link>
             ) : (
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition"
               >
                 <Home className="h-4 w-4" />
@@ -83,10 +83,10 @@ export function AppNavbar({ user, showBackButton = false, backUrl = '/dashboard'
               {getPageTitle()}
             </h1>
           </div>
-          
+
           <div className="flex items-center space-x-4">
-            <Link 
-              href="/profile" 
+            <Link
+              href="/profile"
               className="flex items-center space-x-3 hover:opacity-80 transition"
             >
               <Avatar className="h-8 w-8">
@@ -97,8 +97,8 @@ export function AppNavbar({ user, showBackButton = false, backUrl = '/dashboard'
               <div>
                 <div className="flex items-center space-x-2">
                   <p className="text-sm font-medium text-gray-900">{user.name || 'Unknown User'}</p>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={`text-xs ${getRoleBadgeColor(user.role)}`}
                   >
                     {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Member'}
@@ -107,9 +107,9 @@ export function AppNavbar({ user, showBackButton = false, backUrl = '/dashboard'
                 <p className="text-xs text-gray-500">{user.position || 'No position set'}</p>
               </div>
             </Link>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleSignOut}
               disabled={signingOut}
               className="flex items-center space-x-2"

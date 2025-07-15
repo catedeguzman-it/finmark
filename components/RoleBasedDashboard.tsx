@@ -65,11 +65,8 @@ export function RoleBasedDashboard({ children }: RoleBasedDashboardProps) {
             Welcome back! Here's your {role} dashboard overview.
           </p>
         </div>
-        <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-          Role: {role.charAt(0).toUpperCase() + role.slice(1)}
-        </div>
       </div>
-      
+
       {children}
     </div>
   );
