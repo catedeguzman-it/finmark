@@ -54,7 +54,7 @@ export const userOrganizationsTable = pgTable('user_organizations_table', {
 export const userInvitationsTable = pgTable('user_invitations_table', {
   id: serial('id').primaryKey(),
   email: text('email').notNull(),
-  organizationId: integer('organization_id').notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  organizationId: integer('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { length: 50 }).notNull(), // admin, manager, analyst, viewer
   position: text('position'),
   invitedBy: integer('invited_by').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),

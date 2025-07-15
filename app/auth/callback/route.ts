@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         let redirectPath = '/dashboard';
         const next = searchParams.get('next');
         if (next && next.startsWith('/') && !next.startsWith('//')) {
-          redirectPath = next;
+          redirectPath = decodeURIComponent(next);
         }
         
         console.log('Redirecting to:', redirectPath);

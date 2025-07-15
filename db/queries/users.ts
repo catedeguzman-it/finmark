@@ -1,6 +1,6 @@
 import { eq, count } from 'drizzle-orm';
 import { db } from '../index';
-import { InsertUser, SelectUser, usersTable } from '../schema';
+import { InsertUser, SelectUser, usersTable, userOrganizationsTable } from '../schema';
 
 export async function createUser(data: InsertUser) {
   try {
@@ -79,4 +79,36 @@ export async function hasAnyUsers(): Promise<boolean> {
     console.error('Failed to check if users exist:', error);
     throw error;
   }
+}
+
+export async function getAllUsersWithOrganizations() {
+  const { organizationsTable } = await import('../schema');
+  
+  return db
+    .select({
+      user: usersTable,
+      organization: {
+        id: userOrganizationsTable.organizationId,
+        name: organizationsTable.name,
+        role: userOrganizationsTable.role,
+        joinedAt: userOrganizationsTable.createdAt,
+      }
+    })
+    .from(usersTable)
+    .leftJoin(userOrganizationsTable, eq(usersTable.id, userOrganizationsTable.userId))
+    .leftJoin(organizationsTable, eq(userOrganizationsTable.organizationId, organizationsTable.id))
+    .orderBy(usersTable.createdAt);
+}
+
+export async function getUsersInOrganization(organizationId: number) {
+  return db
+    .select({
+      user: usersTable,
+      organizationRole: userOrganizationsTable.role,
+      joinedAt: userOrganizationsTable.createdAt,
+    })
+    .from(usersTable)
+    .innerJoin(userOrganizationsTable, eq(usersTable.id, userOrganizationsTable.userId))
+    .where(eq(userOrganizationsTable.organizationId, organizationId))
+    .orderBy(usersTable.createdAt);
 } 

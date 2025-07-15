@@ -31,7 +31,6 @@ export type SignupFormData = z.infer<typeof signupSchema>;
 
 export const onboardingSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
-  invitationToken: z.string().optional(),
 });
 
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;

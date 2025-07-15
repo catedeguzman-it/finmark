@@ -1,12 +1,34 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { SelectUser } from '@/db/schema';
+import { SelectUser, SelectOrganization } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ComponentLoading } from '@/components/ui/loading';
 import { AppNavbar } from '@/components/ui/app-navbar';
 import { Badge } from '@/components/ui/badge';
+import { MemberManagement } from '@/components/MemberManagement';
+import { canManageUsers } from '@/lib/rbac';
+import { getOrganizationMembers } from './actions';
+
+interface MemberWithOrganization {
+  user: SelectUser;
+  organization: {
+    id: number | null;
+    role: string | null;
+    joinedAt: Date | null;
+  };
+}
+
+interface UserWithOrganization {
+  user: SelectUser;
+  organization: {
+    id: number | null;
+    name: string | null;
+    role: string | null;
+    joinedAt: Date | null;
+  } | null;
+}
 
 interface ProfileClientProps {
   user: User;
@@ -14,26 +36,50 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
-  const [allUsers, setAllUsers] = useState<SelectUser[]>([]);
+  const [allUsers, setAllUsers] = useState<UserWithOrganization[]>([]);
+  const [members, setMembers] = useState<MemberWithOrganization[]>([]);
+  const [organizations, setOrganizations] = useState<SelectOrganization[]>([]);
   const [loading, setLoading] = useState(true);
+  const isAdmin = canManageUsers(dbUser.role as any);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/users');
-        if (response.ok) {
-          const users = await response.json();
-          setAllUsers(users);
+        if (isAdmin) {
+          // Fetch organization members and organizations for admin users
+          const { members: orgMembers, organizations: orgs } = await getOrganizationMembers();
+          // Transform the data to match our interface
+          const transformedMembers = orgMembers.map(member => ({
+            user: member.user,
+            organization: member.organization ? {
+              id: member.organization.id,
+              role: member.organization.role,
+              joinedAt: member.organization.joinedAt
+            } : {
+              id: null,
+              role: null,
+              joinedAt: null
+            }
+          }));
+          setMembers(transformedMembers);
+          setOrganizations(orgs);
+        } else {
+          // Fetch all users with organization details for non-admin users
+          const response = await fetch('/api/users');
+          if (response.ok) {
+            const users = await response.json();
+            setAllUsers(users);
+          }
         }
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching data:', error);
       }
       setLoading(false);
     };
 
-    fetchUsers();
-  }, []);
+    fetchData();
+  }, [isAdmin]);
 
   const getRoleBadgeColor = (role: string | null) => {
     switch (role) {
@@ -103,46 +149,120 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Organization Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {allUsers.length === 0 ? (
-              <p className="text-center text-muted-foreground">No other users found.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allUsers.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.name || 'Unknown'}</TableCell>
-                      <TableCell>{u.email}</TableCell>
-                      <TableCell>{u.position || 'Not set'}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${getRoleBadgeColor(u.role)}`}
-                        >
-                          {u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Member'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+        {isAdmin ? (
+          <MemberManagement 
+            members={members}
+            organizations={organizations}
+            currentUserId={dbUser.id}
+          />
+        ) : (
+          <div className="space-y-6">
+            {/* User Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-blue-600">{allUsers.length}</div>
+                  <p className="text-sm text-muted-foreground">Total Users</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {allUsers.filter(u => u.user.isOnboarded).length}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Active Users</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {allUsers.filter(u => u.organization?.id).length}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Assigned to Orgs</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {allUsers.filter(u => u.user.role === 'admin').length}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Administrators</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>All Users in System</CardTitle>
+              </CardHeader>
+              <CardContent>
+              {allUsers.length === 0 ? (
+                <p className="text-center text-muted-foreground">No users found.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>System Role</TableHead>
+                      <TableHead>Organization</TableHead>
+                      <TableHead>Org Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {allUsers.map((userWithOrg) => (
+                      <TableRow key={userWithOrg.user.id}>
+                        <TableCell className="font-medium">{userWithOrg.user.name || 'Unknown'}</TableCell>
+                        <TableCell>{userWithOrg.user.email}</TableCell>
+                        <TableCell>{userWithOrg.user.position || 'Not set'}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${getRoleBadgeColor(userWithOrg.user.role)}`}
+                          >
+                            {userWithOrg.user.role ? userWithOrg.user.role.charAt(0).toUpperCase() + userWithOrg.user.role.slice(1) : 'Member'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {userWithOrg.organization?.name ? (
+                            <span className="text-sm font-medium">{userWithOrg.organization.name}</span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Not assigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {userWithOrg.organization?.role ? (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${getRoleBadgeColor(userWithOrg.organization.role)}`}
+                            >
+                              {userWithOrg.organization.role.charAt(0).toUpperCase() + userWithOrg.organization.role.slice(1)}
+                            </Badge>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${userWithOrg.user.isOnboarded ? 'bg-green-100 text-green-800 border-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}
+                          >
+                            {userWithOrg.user.isOnboarded ? 'Active' : 'Pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(userWithOrg.user.createdAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+          </div>
+        )}
       </main>
     </div>
   );

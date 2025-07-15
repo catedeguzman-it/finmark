@@ -4,8 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { getUserByAuthId, updateUser, createUser } from '@/db/queries/users';
-import { addUserToOrganization } from '@/db/queries/organizations';
-import { getValidInvitation, acceptInvitation } from '@/db/queries/invitations';
+import { addUserToOrganization, getAllOrganizations } from '@/db/queries/organizations';
 
 export async function onboardUser(formData: FormData) {
   const supabase = await createClient();
@@ -13,6 +12,7 @@ export async function onboardUser(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error('No user logged in');
+  if (!user.email) throw new Error('User email is required');
 
   let dbUser = await getUserByAuthId(user.id);
 
@@ -20,7 +20,7 @@ export async function onboardUser(formData: FormData) {
   if (!dbUser) {
     dbUser = await createUser({
       authUserId: user.id,
-      email: user.email!,
+      email: user.email,
       name: '',
       position: '',
       role: 'member',
@@ -31,53 +31,41 @@ export async function onboardUser(formData: FormData) {
   if (dbUser.isOnboarded) redirect('/dashboard');
 
   const name = formData.get('name') as string;
-  const invitationToken = formData.get('invitationToken') as string;
 
-  if (!name) {
-    throw new Error('Full name is required');
+  if (!name || name.trim().length < 2) {
+    throw new Error('Full name is required and must be at least 2 characters');
   }
 
-  let organizationId: number | null = null;
-  let userRole = 'member';
-  let position = '';
+  // Get invitation data from user metadata (set during invite)
+  const userRole = user.user_metadata?.invited_role || 'member';
+  const position = user.user_metadata?.invited_position || '';
+  const organizationName = user.user_metadata?.invited_organization || '';
 
-  // Handle invitation flow
-  if (invitationToken) {
-    const invitation = await getValidInvitation(invitationToken);
-    
-    if (!invitation) {
-      throw new Error('Invalid or expired invitation');
+  try {
+    // Update user with name, position, and role from invitation metadata
+    await updateUser(dbUser.id, { 
+      name: name.trim(), 
+      position,
+      role: userRole,
+      isOnboarded: true 
+    });
+
+    // If there's an organization name, try to find and add user to it
+    if (organizationName) {
+      const organizations = await getAllOrganizations();
+      const organization = organizations.find(org => 
+        org.name.toLowerCase() === organizationName.toLowerCase()
+      );
+      
+      if (organization) {
+        await addUserToOrganization(dbUser.id, organization.id, userRole);
+      }
     }
 
-    // Verify email matches
-    if (invitation.email !== user.email) {
-      throw new Error('This invitation was sent to a different email address');
-    }
-
-    organizationId = invitation.organizationId;
-    userRole = invitation.role;
-    position = invitation.position || '';
-
-    // Accept the invitation
-    await acceptInvitation(invitationToken);
-  } else {
-    // For now, users without invitations cannot complete onboarding
-    // In a full implementation, you might want to redirect them to a waiting page
-    throw new Error('You need an invitation to join FinMark. Please contact your administrator.');
+    revalidatePath('/');
+    redirect('/dashboard');
+  } catch (error) {
+    console.error('Error during onboarding:', error);
+    throw new Error('Failed to complete onboarding. Please try again.');
   }
-
-  // Update user with name and position
-  await updateUser(dbUser.id, { 
-    name, 
-    position, 
-    isOnboarded: true 
-  });
-
-  // Add user to organization if they have an invitation
-  if (organizationId) {
-    await addUserToOrganization(dbUser.id, organizationId, userRole);
-  }
-
-  revalidatePath('/');
-  redirect('/dashboard');
 }

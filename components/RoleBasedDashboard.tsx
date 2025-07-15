@@ -11,6 +11,7 @@ interface RoleBasedDashboardProps {
 }
 
 export const roleDashboardConfig: Record<Role, string[]> = {
+  root_admin: ['executive-overview', 'financial-analytics', 'ecommerce', 'manufacturing', 'healthcare'],
   admin: ['executive-overview', 'financial-analytics', 'ecommerce', 'manufacturing', 'healthcare'],
   manager: ['executive-overview', 'financial-analytics', 'ecommerce'],
   analyst: ['financial-analytics', 'ecommerce'],

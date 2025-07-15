@@ -2,8 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
-import { getUserByAuthId } from '@/db/queries/users';
-import { createInvitation } from '@/db/queries/invitations';
+import { getUserByAuthId, getUserByEmail } from '@/db/queries/users';
 import { getOrganizationById } from '@/db/queries/organizations';
 import { inviteUserSchema } from '@/lib/validations/auth';
 
@@ -16,6 +15,11 @@ export async function inviteUser(formData: FormData) {
 
   const dbUser = await getUserByAuthId(user.id);
   if (!dbUser) throw new Error('User not found');
+  
+  // Check if user has admin permissions (you may want to implement proper RBAC here)
+  if (dbUser.role !== 'admin') {
+    throw new Error('Insufficient permissions. Only admins can invite users.');
+  }
 
   // Parse and validate form data
   const rawData = {
@@ -31,41 +35,39 @@ export async function inviteUser(formData: FormData) {
   const organization = await getOrganizationById(validatedData.organizationId);
   if (!organization) throw new Error('Organization not found');
 
+  // Check if user already exists with this email
+  const existingUser = await getUserByEmail(validatedData.email);
+  if (existingUser) {
+    throw new Error('A user with this email already exists in the system.');
+  }
+
   try {
-    // Create invitation record in our database
-    const invitation = await createInvitation({
-      email: validatedData.email,
-      organizationId: validatedData.organizationId,
-      role: validatedData.role,
-      position: validatedData.position,
-      invitedBy: dbUser.id,
-    });
-
-    // Generate Supabase invite link using admin API
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: 'invite',
-      email: validatedData.email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/onboarding?token=${invitation.token}`,
+    // Call the API route to send the invitation
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/invite`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email: validatedData.email,
+        organizationName: organization.name,
+        role: validatedData.role,
+        position: validatedData.position,
+      }),
     });
 
-    if (linkError) {
-      throw new Error(`Failed to generate invite link: ${linkError.message}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send invitation');
     }
 
-    // In a production app, you would send the email here
-    // For now, we'll just log the invite link
-    console.log('Invitation sent to:', validatedData.email);
-    console.log('Invite link:', linkData.properties?.action_link);
-    console.log('Organization:', organization.name);
-    console.log('Role:', validatedData.role);
+    const result = await response.json();
 
     revalidatePath('/admin');
     return { 
       success: true, 
       message: `Invitation sent to ${validatedData.email}`,
-      inviteLink: linkData.properties?.action_link 
+      inviteLink: result.inviteLink 
     };
 
   } catch (error) {

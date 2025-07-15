@@ -3,7 +3,6 @@
 import { useState, useTransition, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useSearchParams } from 'next/navigation';
 import { onboardUser } from './actions';
 import { onboardingSchema, type OnboardingFormData } from '@/lib/validations/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -16,14 +15,11 @@ import { cn } from '@/lib/utils';
 function OnboardingForm() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const searchParams = useSearchParams();
-  const invitationToken = searchParams.get('token');
 
   const form = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       name: '',
-      invitationToken: invitationToken || undefined,
     },
   });
 
@@ -32,9 +28,6 @@ function OnboardingForm() {
     
     const formData = new FormData();
     formData.append('name', data.name);
-    if (data.invitationToken) {
-      formData.append('invitationToken', data.invitationToken);
-    }
     
     startTransition(async () => {
       try {
@@ -54,10 +47,7 @@ function OnboardingForm() {
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Welcome to FinMark</h1>
           <p className="text-sm text-gray-500">
-            {invitationToken 
-              ? "Complete your profile to join your organization" 
-              : "Please provide your full name to get started"
-            }
+            Complete your profile to get started
           </p>
         </div>
 
@@ -84,13 +74,11 @@ function OnboardingForm() {
             )}
           </div>
 
-          {invitationToken && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                You've been invited to join an organization. Your role and position will be assigned automatically.
-              </p>
-            </div>
-          )}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              Welcome! Complete your profile to finish setting up your account.
+            </p>
+          </div>
 
           <Button 
             type="submit"
@@ -100,10 +88,10 @@ function OnboardingForm() {
             {isPending ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                {invitationToken ? 'Joining Organization...' : 'Completing Setup...'}
+                Completing Setup...
               </>
             ) : (
-              invitationToken ? 'Join Organization' : 'Complete Setup'
+              'Complete Setup'
             )}
           </Button>
         </form>

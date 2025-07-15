@@ -43,6 +43,13 @@
       "when": 1752571347726,
       "tag": "0005_bumpy_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1752575767463,
+      "tag": "0006_huge_enchantress",
+      "breakpoints": true
     }
   ]
 }
