@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,8 +9,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/utils/supabase/client';
 
 const passwordSchema = z.object({
   password: z
@@ -31,6 +32,11 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 export default function SetPasswordClient() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [invitationData, setInvitationData] = useState<{
+    email?: string;
+    role?: string;
+    position?: string;
+  } | null>(null);
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -39,6 +45,32 @@ export default function SetPasswordClient() {
       confirmPassword: '',
     },
   });
+
+  useEffect(() => {
+    const getInvitationData = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      console.log('DEBUG: Set password - user data:', user);
+      
+      if (user?.user_metadata) {
+        const metadata = user.user_metadata;
+        setInvitationData({
+          email: user.email,
+          role: metadata.invited_role,
+          position: metadata.invited_position,
+        });
+        
+        console.log('DEBUG: Set password - invitation data:', {
+          email: user.email,
+          role: metadata.invited_role,
+          position: metadata.invited_position,
+        });
+      }
+    };
+
+    getInvitationData();
+  }, []);
 
   const onSubmit = async (data: PasswordFormData) => {
     setError(null);
@@ -66,6 +98,19 @@ export default function SetPasswordClient() {
           <p className="text-sm text-gray-500">
             Create a secure password for your FinMark account
           </p>
+          {invitationData && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-center mb-2">
+                <User className="w-4 h-4 text-blue-600 mr-2" />
+                <span className="text-sm font-medium text-blue-800">Invitation Details</span>
+              </div>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p><strong>Email:</strong> {invitationData.email}</p>
+                {invitationData.role && <p><strong>Role:</strong> {invitationData.role}</p>}
+                {invitationData.position && <p><strong>Position:</strong> {invitationData.position}</p>}
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (

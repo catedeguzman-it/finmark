@@ -41,12 +41,12 @@ export const organizationsTable = pgTable('organizations_table', {
   updatedAt: timestamp('updated_at').notNull().$onUpdate(() => new Date()),
 });
 
-// User organization relationships
+// User organization visibility (which org they can see/work with)
 export const userOrganizationsTable = pgTable('user_organizations_table', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   organizationId: integer('organization_id').notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
-  role: varchar('role', { length: 50 }).notNull().default('member'), // admin, member, viewer
+  isDefault: boolean('is_default').default(false), // which org is shown by default
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -54,8 +54,8 @@ export const userOrganizationsTable = pgTable('user_organizations_table', {
 export const userInvitationsTable = pgTable('user_invitations_table', {
   id: serial('id').primaryKey(),
   email: text('email').notNull(),
-  organizationId: integer('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
-  role: varchar('role', { length: 50 }).notNull(), // admin, manager, analyst, viewer
+  organizationId: integer('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }), // optional - which org they'll have access to
+  role: varchar('role', { length: 50 }).notNull(), // system-wide role: root_admin, admin, manager, analyst, viewer
   position: text('position'),
   invitedBy: integer('invited_by').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   token: varchar('token', { length: 256 }).notNull().unique(),

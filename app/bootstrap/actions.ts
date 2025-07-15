@@ -68,8 +68,8 @@ export async function createRootAdmin(formData: FormData) {
       isOnboarded: true,
     });
 
-    // Add user to the default organization as admin
-    await addUserToOrganization(dbUser.id, defaultOrg.id, 'admin');
+    // Add user to the default organization as default
+    await addUserToOrganization(dbUser.id, defaultOrg.id, true);
 
     // Sign in the user automatically
     const { error: signInError } = await supabase.auth.signInWithPassword({

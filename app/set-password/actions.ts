@@ -17,20 +17,21 @@ export async function setUserPassword(formData: FormData) {
     throw new Error('Password must be at least 8 characters long');
   }
 
-  try {
-    // Update the user's password
-    const { error } = await supabase.auth.updateUser({
-      password: password
-    });
+  console.log('DEBUG: Setting password for user:', user.id);
+  console.log('DEBUG: User metadata:', user.user_metadata);
 
-    if (error) {
-      throw new Error(`Failed to set password: ${error.message}`);
-    }
+  // Update the user's password
+  const { error } = await supabase.auth.updateUser({
+    password: password
+  });
 
-    revalidatePath('/');
-    redirect('/onboarding');
-  } catch (error) {
-    console.error('Error setting password:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to set password');
+  if (error) {
+    console.error('DEBUG: Password update error:', error);
+    throw new Error(`Failed to set password: ${error.message}`);
   }
+
+  console.log('DEBUG: Password set successfully, redirecting to onboarding');
+
+  revalidatePath('/');
+  redirect('/onboarding');
 }

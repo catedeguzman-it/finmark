@@ -67,6 +67,14 @@ export async function updateUser(id: SelectUser['id'], data: Partial<Omit<Select
   return user;
 }
 
+export async function updateUserProfile(id: SelectUser['id'], data: { name?: string; position?: string }) {
+  const [user] = await db.update(usersTable)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(usersTable.id, id))
+    .returning();
+  return user;
+}
+
 export async function deleteUser(id: SelectUser['id']) {
   await db.delete(usersTable).where(eq(usersTable.id, id));
 }
@@ -90,7 +98,7 @@ export async function getAllUsersWithOrganizations() {
       organization: {
         id: userOrganizationsTable.organizationId,
         name: organizationsTable.name,
-        role: userOrganizationsTable.role,
+        isDefault: userOrganizationsTable.isDefault,
         joinedAt: userOrganizationsTable.createdAt,
       }
     })
@@ -104,7 +112,7 @@ export async function getUsersInOrganization(organizationId: number) {
   return db
     .select({
       user: usersTable,
-      organizationRole: userOrganizationsTable.role,
+      isDefault: userOrganizationsTable.isDefault,
       joinedAt: userOrganizationsTable.createdAt,
     })
     .from(usersTable)

@@ -21,7 +21,7 @@ export async function getUserOrganizations(userId: number) {
   return db
     .select({
       organization: organizationsTable,
-      role: userOrganizationsTable.role,
+      isDefault: userOrganizationsTable.isDefault,
       joinedAt: userOrganizationsTable.createdAt,
     })
     .from(userOrganizationsTable)
@@ -29,9 +29,9 @@ export async function getUserOrganizations(userId: number) {
     .where(eq(userOrganizationsTable.userId, userId));
 }
 
-export async function addUserToOrganization(userId: number, organizationId: number, role: string = 'member') {
+export async function addUserToOrganization(userId: number, organizationId: number, isDefault: boolean = false) {
   const [userOrg] = await db.insert(userOrganizationsTable)
-    .values({ userId, organizationId, role })
+    .values({ userId, organizationId, isDefault })
     .returning();
   return userOrg;
 }

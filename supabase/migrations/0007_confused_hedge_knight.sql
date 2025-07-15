@@ -1,0 +1,1 @@
+ALTER TABLE "user_organizations_table" RENAME COLUMN "role" TO "is_default";

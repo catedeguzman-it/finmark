@@ -2,12 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient, createAdminClient } from '@/utils/supabase/server';
-import { getUserByAuthId, getAllUsersWithOrganizations } from '@/db/queries/users';
+import { getUserByAuthId, getAllUsersWithOrganizations, updateUser } from '@/db/queries/users';
 import { getAllOrganizations, addUserToOrganization } from '@/db/queries/organizations';
 import { canManageUsers } from '@/lib/rbac';
-import { eq } from 'drizzle-orm';
-import { db } from '@/db';
-import { userOrganizationsTable } from '@/db/schema';
 
 export async function inviteUserToSystem(formData: FormData) {
   const supabase = await createClient();
@@ -37,8 +34,15 @@ export async function inviteUserToSystem(formData: FormData) {
     // Use admin client to send invitation
     const adminClient = createAdminClient();
 
-    const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    console.log('DEBUG: Sending invitation with data:', {
+      email,
+      role,
+      position,
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=${encodeURIComponent('/set-password')}`,
+    });
+
+    const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm?type=invite&next=${encodeURIComponent('/set-password')}`,
       data: {
         // Store invitation metadata in user metadata
         invited_role: role,
@@ -48,12 +52,13 @@ export async function inviteUserToSystem(formData: FormData) {
     });
 
     if (error) {
+      console.error('DEBUG: Invitation error:', error);
       throw new Error(`Failed to invite user: ${error.message}`);
     }
 
-    console.log('Invitation sent to:', email);
-    console.log('Role:', role);
-    console.log('Position:', position);
+    console.log('DEBUG: Invitation sent successfully to:', email);
+    console.log('DEBUG: Role:', role);
+    console.log('DEBUG: Position:', position);
 
     revalidatePath('/profile');
     return { 
@@ -84,14 +89,14 @@ export async function assignUserToOrganization(formData: FormData) {
 
   const userId = parseInt(formData.get('userId') as string);
   const organizationId = parseInt(formData.get('organizationId') as string);
-  const role = formData.get('role') as string;
+  const isDefault = formData.get('isDefault') === 'true';
 
-  if (!userId || !organizationId || !role) {
+  if (!userId || !organizationId) {
     throw new Error('Missing required fields');
   }
 
   try {
-    await addUserToOrganization(userId, organizationId, role);
+    await addUserToOrganization(userId, organizationId, isDefault);
     
     revalidatePath('/profile');
     return { 
@@ -105,7 +110,7 @@ export async function assignUserToOrganization(formData: FormData) {
   }
 }
 
-export async function updateUserOrganizationRole(formData: FormData) {
+export async function updateUserSystemRole(formData: FormData) {
   const supabase = await createClient();
 
   // Get current user and verify admin permissions
@@ -121,31 +126,59 @@ export async function updateUserOrganizationRole(formData: FormData) {
   }
 
   const userId = parseInt(formData.get('userId') as string);
-  const organizationId = parseInt(formData.get('organizationId') as string);
   const newRole = formData.get('role') as string;
 
-  if (!userId || !organizationId || !newRole) {
+  if (!userId || !newRole) {
     throw new Error('Missing required fields');
   }
 
   try {
-    await db
-      .update(userOrganizationsTable)
-      .set({ role: newRole })
-      .where(
-        eq(userOrganizationsTable.userId, userId) && 
-        eq(userOrganizationsTable.organizationId, organizationId)
-      );
+    await updateUser(userId, { role: newRole });
     
     revalidatePath('/profile');
     return { 
       success: true, 
-      message: 'User role updated successfully' 
+      message: 'User system role updated successfully' 
     };
 
   } catch (error) {
     console.error('Error updating user role:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to update user role');
+  }
+}
+
+export async function updateProfile(formData: FormData) {
+  const supabase = await createClient();
+
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const dbUser = await getUserByAuthId(user.id);
+  if (!dbUser) throw new Error('User not found');
+
+  const name = formData.get('name') as string;
+  const position = formData.get('position') as string;
+
+  if (!name?.trim()) {
+    throw new Error('Name is required');
+  }
+
+  try {
+    await updateUser(dbUser.id, { 
+      name: name.trim(), 
+      position: position?.trim() || null 
+    });
+    
+    revalidatePath('/profile');
+    return { 
+      success: true, 
+      message: 'Profile updated successfully' 
+    };
+
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to update profile');
   }
 }
 

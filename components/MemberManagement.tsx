@@ -10,14 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SimpleUserInvitationForm } from '@/components/SimpleUserInvitationForm';
-import { assignUserToOrganization, updateUserOrganizationRole, getPendingInvitations } from '@/app/profile/actions';
+import { assignUserToOrganization, updateUserSystemRole, getPendingInvitations } from '@/app/profile/actions';
 import { UserPlus, Settings, Clock, XCircle, Users } from 'lucide-react';
 
 interface MemberWithOrganization {
   user: SelectUser;
   organization: {
     id: number | null;
-    role: string | null;
+    isDefault: boolean | null;
     joinedAt: Date | null;
   };
 }
@@ -100,18 +100,17 @@ export function MemberManagement({ members, organizations, currentUserId }: Memb
     });
   };
 
-  const handleUpdateRole = async (userId: number, organizationId: number, newRole: string) => {
+  const handleUpdateRole = async (userId: number, organizationId: number | null, newRole: string) => {
     setError(null);
     setSuccess(null);
 
     const formData = new FormData();
     formData.append('userId', userId.toString());
-    formData.append('organizationId', organizationId.toString());
     formData.append('role', newRole);
 
     startTransition(async () => {
       try {
-        const result = await updateUserOrganizationRole(formData);
+        const result = await updateUserSystemRole(formData);
         setSuccess(result.message);
         // Refresh the page to show updated data
         window.location.reload();
@@ -240,9 +239,9 @@ export function MemberManagement({ members, organizations, currentUserId }: Memb
                     <TableCell>
                       <Select
                         disabled={isPending || member.user.id === currentUserId}
-                        defaultValue={member.organization.role || 'member'}
+                        defaultValue={member.user.role || 'member'}
                         onValueChange={(newRole) => 
-                          handleUpdateRole(member.user.id, member.organization.id!, newRole)
+                          handleUpdateRole(member.user.id, null, newRole)
                         }
                       >
                         <SelectTrigger className="w-32">

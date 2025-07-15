@@ -41,31 +41,35 @@ export async function onboardUser(formData: FormData) {
   const position = user.user_metadata?.invited_position || '';
   const organizationName = user.user_metadata?.invited_organization || '';
 
-  try {
-    // Update user with name, position, and role from invitation metadata
-    await updateUser(dbUser.id, { 
-      name: name.trim(), 
-      position,
-      role: userRole,
-      isOnboarded: true 
-    });
+  console.log('DEBUG: Onboarding user with metadata:', {
+    userRole,
+    position,
+    organizationName,
+    userMetadata: user.user_metadata,
+  });
 
-    // If there's an organization name, try to find and add user to it
-    if (organizationName) {
-      const organizations = await getAllOrganizations();
-      const organization = organizations.find(org => 
-        org.name.toLowerCase() === organizationName.toLowerCase()
-      );
-      
-      if (organization) {
-        await addUserToOrganization(dbUser.id, organization.id, userRole);
-      }
+  // Update user with name, position, and role from invitation metadata
+  await updateUser(dbUser.id, { 
+    name: name.trim(), 
+    position,
+    role: userRole,
+    isOnboarded: true 
+  });
+
+  console.log('DEBUG: User updated successfully with role:', userRole);
+
+  // If there's an organization name, try to find and add user to it
+  if (organizationName) {
+    const organizations = await getAllOrganizations();
+    const organization = organizations.find(org => 
+      org.name.toLowerCase() === organizationName.toLowerCase()
+    );
+    
+    if (organization) {
+      await addUserToOrganization(dbUser.id, organization.id, userRole);
     }
-
-    revalidatePath('/');
-    redirect('/dashboard');
-  } catch (error) {
-    console.error('Error during onboarding:', error);
-    throw new Error('Failed to complete onboarding. Please try again.');
   }
+
+  revalidatePath('/');
+  redirect('/dashboard');
 }

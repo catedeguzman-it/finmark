@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { User } from '@supabase/supabase-js';
 import { SelectUser, SelectOrganization } from '@/db/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,27 +7,148 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ComponentLoading } from '@/components/ui/loading';
 import { AppNavbar } from '@/components/ui/app-navbar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MemberManagement } from '@/components/MemberManagement';
 import { canManageUsers } from '@/lib/rbac';
-import { getOrganizationMembers } from './actions';
+import { getOrganizationMembers, updateProfile } from './actions';
+import { Edit, Save, X } from 'lucide-react';
 
 interface MemberWithOrganization {
   user: SelectUser;
   organization: {
     id: number | null;
-    role: string | null;
+    isDefault: boolean | null;
     joinedAt: Date | null;
   };
 }
 
-interface UserWithOrganization {
-  user: SelectUser;
-  organization: {
-    id: number | null;
-    name: string | null;
-    role: string | null;
-    joinedAt: Date | null;
-  } | null;
+interface ProfileClientProps {
+  user: User;
+  dbUser: SelectUser;
+}
+
+function ProfileEditForm({ dbUser }: { dbUser: SelectUser }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(dbUser.name || '');
+  const [position, setPosition] = useState(dbUser.position || '');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('position', position);
+
+    startTransition(async () => {
+      try {
+        const result = await updateProfile(formData);
+        setSuccess(result.message);
+        setIsEditing(false);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      }
+    });
+  };
+
+  const handleCancel = () => {
+    setName(dbUser.name || '');
+    setPosition(dbUser.position || '');
+    setIsEditing(false);
+    setError(null);
+    setSuccess(null);
+  };
+
+  if (!isEditing) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-gray-500">Full Name</p>
+          <p className="text-base">{dbUser.name || 'Not set'}</p>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-500">Position</p>
+          <p className="text-base">{dbUser.position || 'Not set'}</p>
+        </div>
+        <div className="md:col-span-2">
+          <Button 
+            onClick={() => setIsEditing(true)}
+            variant="outline"
+            size="sm"
+            className="mt-2"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Profile
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {success && (
+        <Alert>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="name">Full Name *</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your full name"
+            required
+            disabled={isPending}
+          />
+        </div>
+        <div>
+          <Label htmlFor="position">Position</Label>
+          <Input
+            id="position"
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+            placeholder="Enter your position"
+            disabled={isPending}
+          />
+        </div>
+      </div>
+      
+      <div className="flex gap-2">
+        <Button type="submit" disabled={isPending} size="sm">
+          <Save className="w-4 h-4 mr-2" />
+          {isPending ? 'Saving...' : 'Save Changes'}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={handleCancel}
+          disabled={isPending}
+          size="sm"
+        >
+          <X className="w-4 h-4 mr-2" />
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
 }
 
 interface ProfileClientProps {
@@ -54,11 +175,11 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
             user: member.user,
             organization: member.organization ? {
               id: member.organization.id,
-              role: member.organization.role,
+              isDefault: member.organization.isDefault,
               joinedAt: member.organization.joinedAt
             } : {
               id: null,
-              role: null,
+              isDefault: null,
               joinedAt: null
             }
           }));
@@ -115,18 +236,11 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
             <CardTitle>Your Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Full Name</p>
-                <p className="text-base">{dbUser.name || 'Not set'}</p>
-              </div>
+            <ProfileEditForm dbUser={dbUser} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
               <div>
                 <p className="text-sm font-medium text-gray-500">Email</p>
                 <p className="text-base">{dbUser.email}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Position</p>
-                <p className="text-base">{dbUser.position || 'Not set'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Role</p>
@@ -207,8 +321,7 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
                       <TableHead>Position</TableHead>
                       <TableHead>System Role</TableHead>
                       <TableHead>Organization</TableHead>
-                      <TableHead>Org Role</TableHead>
-                      <TableHead>Status</TableHead>
+                       <TableHead>Org Status</TableHead>                      <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -234,13 +347,15 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
                           )}
                         </TableCell>
                         <TableCell>
-                          {userWithOrg.organization?.role ? (
+                          {userWithOrg.organization?.isDefault ? (
                             <Badge 
                               variant="outline" 
-                              className={`text-xs ${getRoleBadgeColor(userWithOrg.organization.role)}`}
+                              className="text-xs bg-blue-100 text-blue-800 border-blue-200"
                             >
-                              {userWithOrg.organization.role.charAt(0).toUpperCase() + userWithOrg.organization.role.slice(1)}
+                              Default
                             </Badge>
+                          ) : userWithOrg.organization ? (
+                            <span className="text-sm text-muted-foreground">Assigned</span>
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                           )}
