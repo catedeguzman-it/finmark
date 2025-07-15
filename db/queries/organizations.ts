@@ -4,8 +4,7 @@ import {
   InsertOrganization, 
   SelectOrganization, 
   organizationsTable,
-  userOrganizationsTable,
-  usersTable 
+  userOrganizationsTable
 } from '../schema';
 
 export async function createOrganization(data: InsertOrganization) {
@@ -43,4 +42,8 @@ export async function updateOrganization(id: SelectOrganization['id'], data: Par
     .where(eq(organizationsTable.id, id))
     .returning();
   return organization;
+}
+
+export async function getAllOrganizations(): Promise<SelectOrganization[]> {
+  return await db.select().from(organizationsTable).orderBy(organizationsTable.createdAt);
 } 

@@ -41,8 +41,17 @@ export async function getUserById(id: SelectUser['id']): Promise<SelectUser | un
 }
 
 export async function getUserByAuthId(authUserId: string): Promise<SelectUser | undefined> {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.authUserId, authUserId));
-  return user;
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.authUserId, authUserId));
+    return user;
+  } catch (error) {
+    console.error('Database query failed in getUserByAuthId:', {
+      authUserId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
+  }
 }
 
 export async function getUserByEmail(email: string): Promise<SelectUser | undefined> {

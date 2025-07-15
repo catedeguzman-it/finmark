@@ -1,0 +1,1 @@
+ALTER TABLE "organizations_table" ADD COLUMN "type" varchar(50) DEFAULT 'small_business';

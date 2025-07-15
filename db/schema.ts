@@ -4,10 +4,31 @@ import { integer, pgTable, serial, text, timestamp, decimal, varchar, boolean, r
 export const usersTable = pgTable('users_table', {
   id: serial('id').primaryKey(),
   authUserId: varchar('auth_user_id', { length: 256 }).notNull().unique(), // Reference to Supabase auth.users.id
-  name: text('name').notNull(),
+  name: text('name'),
   email: text('email').notNull().unique(),
+  position: text('position'),
+  role: varchar('role', { length: 50 }).default('member'),
+  isOnboarded: boolean('is_onboarded').default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().$onUpdate(() => new Date()),
+});
+
+// Dashboards table
+export const dashboardsTable = pgTable('dashboards_table', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  icon: text('icon'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().$onUpdate(() => new Date()),
+});
+
+// Organization dashboards relationships
+export const organizationDashboardsTable = pgTable('organization_dashboards_table', {
+  id: serial('id').primaryKey(),
+  organizationId: integer('organization_id').notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  dashboardId: varchar('dashboard_id', { length: 50 }).notNull().references(() => dashboardsTable.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 // Organizations table
@@ -15,6 +36,7 @@ export const organizationsTable = pgTable('organizations_table', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
+  type: varchar('type', { length: 50 }).default('small_business'), // startup, small_business, enterprise, non_profit
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().$onUpdate(() => new Date()),
 });
@@ -25,6 +47,21 @@ export const userOrganizationsTable = pgTable('user_organizations_table', {
   userId: integer('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   organizationId: integer('organization_id').notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { length: 50 }).notNull().default('member'), // admin, member, viewer
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// User invitations table
+export const userInvitationsTable = pgTable('user_invitations_table', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull(),
+  organizationId: integer('organization_id').notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 50 }).notNull(), // admin, manager, analyst, viewer
+  position: text('position'),
+  invitedBy: integer('invited_by').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  token: varchar('token', { length: 256 }).notNull().unique(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, accepted, expired
+  expiresAt: timestamp('expires_at').notNull(),
+  acceptedAt: timestamp('accepted_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -249,4 +286,8 @@ export type SelectCashFlowData = typeof cashFlowDataTable.$inferSelect;
 
 // Sales Data Types
 export type InsertSalesData = typeof salesDataTable.$inferInsert;
-export type SelectSalesData = typeof salesDataTable.$inferSelect; 
+export type SelectSalesData = typeof salesDataTable.$inferSelect;
+
+// User Invitation Types
+export type InsertUserInvitation = typeof userInvitationsTable.$inferInsert;
+export type SelectUserInvitation = typeof userInvitationsTable.$inferSelect; 

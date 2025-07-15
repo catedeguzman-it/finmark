@@ -6,6 +6,8 @@ import { useAdminMode } from '@/hooks/use-admin-mode';
 import { AdminFloatingButton } from '@/components/ui/admin-floating-button';
 import { AdminPanel } from '@/components/ui/admin-panel';
 import { showDummyAction } from '@/utils/exportUtils';
+import { UserPermissionsProvider } from '@/hooks/use-user-permissions';
+import { RoleBasedDashboard } from '@/components/RoleBasedDashboard';
 
 // Import types and data
 import { Organization, Dashboard, UserProfile } from './types';
@@ -168,51 +170,55 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      <DashboardHeader userProfile={updatedUserProfile} />
-      
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {viewState.type === 'organizations' && (
-          <OrganizationView
-            organizations={organizations}
-            userProfile={updatedUserProfile}
-            onSelectOrganization={handleSelectOrganization}
-          />
-        )}
+    <UserPermissionsProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+        <DashboardHeader userProfile={updatedUserProfile} />
         
-        {viewState.type === 'dashboards' && (
-          <DashboardView
-            organization={viewState.organization}
-            dashboards={dashboards}
-            userProfile={updatedUserProfile}
-            onAccessDashboard={handleAccessDashboard}
-            onBack={handleBackToOrganizations}
-          />
-        )}
-        
-        {viewState.type === 'dashboard' && (
-          <div className="space-y-6">
-            {renderDashboard(viewState.dashboard, viewState.organization)}
-          </div>
-        )}
-      </main>
+        <main className="max-w-7xl mx-auto px-6 py-8">
+          <RoleBasedDashboard>
+            {viewState.type === 'organizations' && (
+              <OrganizationView
+                organizations={organizations}
+                userProfile={updatedUserProfile}
+                onSelectOrganization={handleSelectOrganization}
+              />
+            )}
+            
+            {viewState.type === 'dashboards' && (
+              <DashboardView
+                organization={viewState.organization}
+                dashboards={dashboards}
+                userProfile={updatedUserProfile}
+                onAccessDashboard={handleAccessDashboard}
+                onBack={handleBackToOrganizations}
+              />
+            )}
+            
+            {viewState.type === 'dashboard' && (
+              <div className="space-y-6">
+                {renderDashboard(viewState.dashboard, viewState.organization)}
+              </div>
+            )}
+          </RoleBasedDashboard>
+        </main>
 
-      {/* Admin Mode Components */}
-      {isAdminMode && (
-        <>
-          <AdminFloatingButton 
-            onClick={handleToggleAdminPanel}
-            isOpen={isAdminPanelOpen}
-          />
-          <AdminPanel
-            isOpen={isAdminPanelOpen}
-            organizations={organizations}
-            userProfile={updatedUserProfile}
-            onAssignOrganization={handleAssignOrganization}
-            onUnassignOrganization={handleUnassignOrganization}
-          />
-        </>
-      )}
-    </div>
+        {/* Admin Mode Components */}
+        {isAdminMode && (
+          <>
+            <AdminFloatingButton 
+              onClick={handleToggleAdminPanel}
+              isOpen={isAdminPanelOpen}
+            />
+            <AdminPanel
+              isOpen={isAdminPanelOpen}
+              organizations={organizations}
+              userProfile={updatedUserProfile}
+              onAssignOrganization={handleAssignOrganization}
+              onUnassignOrganization={handleUnassignOrganization}
+            />
+          </>
+        )}
+      </div>
+    </UserPermissionsProvider>
   );
 } 

@@ -15,6 +15,34 @@
       "when": 1751875164020,
       "tag": "0001_new_dreaming_celestial",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752568708233,
+      "tag": "0002_smiling_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752568770550,
+      "tag": "0003_bent_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1752570308724,
+      "tag": "0004_blue_spiral",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1752571347726,
+      "tag": "0005_bumpy_dust",
+      "breakpoints": true
     }
   ]
 }
