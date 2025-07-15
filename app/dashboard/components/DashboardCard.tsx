@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Dashboard, UserProfile } from '../types';
+import { getIconComponent } from '@/utils/iconUtils';
 
 interface DashboardCardProps {
   dashboard: Dashboard;
@@ -13,8 +14,8 @@ interface DashboardCardProps {
 }
 
 export function DashboardCard({ dashboard, userProfile, onAccess, isAssigned }: DashboardCardProps) {
-  const Icon = dashboard.icon;
-  const hasAccess = dashboard.requiredRole.includes(userProfile.role);
+  const Icon = getIconComponent(dashboard.icon);
+  const hasAccess = true; // Remove role restrictions - all users can access all dashboards
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {

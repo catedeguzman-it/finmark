@@ -19,6 +19,14 @@ export const dashboardsTable = pgTable('dashboards_table', {
   title: text('title').notNull(),
   description: text('description'),
   icon: text('icon'),
+  category: varchar('category', { length: 50 }),
+  status: varchar('status', { length: 20 }).default('operational'),
+  color: varchar('color', { length: 100 }),
+  bgColor: varchar('bg_color', { length: 100 }),
+  iconColor: varchar('icon_color', { length: 100 }),
+  requiredRoles: text('required_roles'), // JSON array of roles
+  metrics: text('metrics'), // JSON field for dashboard metrics
+  metadata: text('metadata'), // JSON field for additional NoSQL-style data
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().$onUpdate(() => new Date()),
 });
@@ -34,9 +42,21 @@ export const organizationDashboardsTable = pgTable('organization_dashboards_tabl
 // Organizations table
 export const organizationsTable = pgTable('organizations_table', {
   id: serial('id').primaryKey(),
+  externalId: varchar('external_id', { length: 100 }).unique(), // For mapping to dummy data IDs
   name: text('name').notNull(),
   description: text('description'),
-  type: varchar('type', { length: 50 }).default('small_business'), // startup, small_business, enterprise, non_profit
+  type: varchar('type', { length: 50 }).default('small_business'), // financial, healthcare, manufacturing, ecommerce, education, government
+  established: varchar('established', { length: 20 }),
+  location: text('location'),
+  employees: integer('employees'),
+  revenue: varchar('revenue', { length: 50 }),
+  industry: text('industry'),
+  website: varchar('website', { length: 255 }),
+  phone: varchar('phone', { length: 50 }),
+  status: varchar('status', { length: 20 }).default('active'), // active, inactive, trial
+  plan: varchar('plan', { length: 20 }).default('basic'), // basic, professional, enterprise
+  lastAccessed: timestamp('last_accessed'),
+  metadata: text('metadata'), // JSON field for additional NoSQL-style data
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().$onUpdate(() => new Date()),
 });

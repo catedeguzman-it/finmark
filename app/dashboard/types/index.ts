@@ -29,7 +29,7 @@ export interface UserProfile {
   position: string;
   department: string;
   location: string;
-  role: 'analyst' | 'stakeholder' | 'executive';
+  role: 'root_admin' | 'admin' | 'manager' | 'analyst' | 'stakeholder' | 'executive' | 'viewer' | 'member';
   assignedOrganizations: string[];
   permissions: string[];
   lastActive: string;
@@ -37,6 +37,21 @@ export interface UserProfile {
 }
 
 export interface Dashboard {
+  id: string;
+  title: string;
+  description: string;
+  icon: string; // Changed to string for serialization
+  metrics: DashboardMetric[];
+  status: string;
+  category: string;
+  color: string;
+  bgColor: string;
+  iconColor: string;
+  requiredRole: string[];
+}
+
+// For client-side use with actual icon components
+export interface DashboardWithIcon {
   id: string;
   title: string;
   description: string;

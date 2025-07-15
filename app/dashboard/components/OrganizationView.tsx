@@ -20,10 +20,8 @@ export function OrganizationView({ organizations, userProfile, onSelectOrganizat
 
   const filteredOrganizations = useMemo(() => {
     return organizations.filter(org => {
-      // Filter by user access
-      const hasAccess = userProfile.assignedOrganizations.includes(org.id);
-      if (!hasAccess) return false;
-
+      // Organizations are already filtered by assignment at page level
+      
       // Filter by type
       if (filters.type !== 'all' && org.type !== filters.type) return false;
 
@@ -40,7 +38,7 @@ export function OrganizationView({ organizations, userProfile, onSelectOrganizat
 
       return true;
     });
-  }, [organizations, userProfile, filters]);
+  }, [organizations, filters]);
 
   return (
     <div className="space-y-8">

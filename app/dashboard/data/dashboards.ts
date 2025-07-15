@@ -1,11 +1,3 @@
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Users, 
-  ShoppingCart, 
-  Factory, 
-  Heart
-} from 'lucide-react';
 import { Dashboard } from '../types';
 
 export const dashboards: Dashboard[] = [
@@ -13,7 +5,7 @@ export const dashboards: Dashboard[] = [
     id: 'overview',
     title: 'Executive Overview',
     description: 'High-level KPIs, system health, and performance metrics across all business units',
-    icon: BarChart3,
+    icon: 'BarChart3',
     metrics: [
       { label: 'System Uptime', value: '99.8%', trend: 'up' },
       { label: 'Processing Speed', value: '0.8s', trend: 'up' },
@@ -30,7 +22,7 @@ export const dashboards: Dashboard[] = [
     id: 'financial',
     title: 'Financial Analytics',
     description: 'Multi-currency analysis, cash flow monitoring, and portfolio performance tracking',
-    icon: TrendingUp,
+    icon: 'TrendingUp',
     metrics: [
       { label: 'Total Revenue', value: '$2.4M', trend: 'up' },
       { label: 'Profit Margin', value: '23.5%', trend: 'up' },
@@ -47,7 +39,7 @@ export const dashboards: Dashboard[] = [
     id: 'marketing',
     title: 'Marketing Analytics',
     description: 'Campaign performance, customer acquisition, and ROI tracking across channels',
-    icon: Users,
+    icon: 'Users',
     metrics: [
       { label: 'Campaign ROI', value: '340%', trend: 'up' },
       { label: 'Lead Generation', value: '1,892', trend: 'up' },
@@ -64,7 +56,7 @@ export const dashboards: Dashboard[] = [
     id: 'ecommerce',
     title: 'E-commerce Analytics',
     description: 'Multi-platform sales tracking, inventory management, and customer behavior analysis',
-    icon: ShoppingCart,
+    icon: 'ShoppingCart',
     metrics: [
       { label: 'Total Sales', value: '$847K', trend: 'up' },
       { label: 'Order Volume', value: '3,421', trend: 'up' },
@@ -81,7 +73,7 @@ export const dashboards: Dashboard[] = [
     id: 'manufacturing',
     title: 'Manufacturing Analytics',
     description: 'Production efficiency, supply chain optimization, and quality control metrics',
-    icon: Factory,
+    icon: 'Factory',
     metrics: [
       { label: 'Production Efficiency', value: '92.7%', trend: 'up' },
       { label: 'Quality Score', value: '98.1%', trend: 'stable' },
@@ -98,7 +90,7 @@ export const dashboards: Dashboard[] = [
     id: 'healthcare',
     title: 'Healthcare Analytics',
     description: 'Patient flow monitoring, resource utilization, and outcome tracking for healthcare facilities',
-    icon: Heart,
+    icon: 'Heart',
     metrics: [
       { label: 'Patient Satisfaction', value: '97.3%', trend: 'up' },
       { label: 'Bed Utilization', value: '84.2%', trend: 'stable' },

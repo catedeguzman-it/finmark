@@ -1,6 +1,11 @@
 import { redirect } from 'next/navigation';
 import { handleAuthRedirect } from '@/utils/bootstrap-check';
 import { getUserByAuthId } from '@/db/queries/users';
+import { 
+  getOrganizationsWithFallback, 
+  getDashboardsWithFallback, 
+  getUserProfileWithFallback
+} from '@/db/queries/dashboard';
 import DashboardClient from './dashboard-client';
 import type { Metadata } from 'next';
 
@@ -36,5 +41,28 @@ export default async function DashboardPage() {
     redirect('/onboarding');
   }
 
-  return <DashboardClient user={systemState.user} dbUser={dbUser} />;
+  // Load dashboard data from database
+  const userEmail = systemState.user.email || '';
+  const [allOrganizations, dashboards, userProfile] = await Promise.all([
+    getOrganizationsWithFallback(),
+    getDashboardsWithFallback(),
+    getUserProfileWithFallback(userEmail)
+  ]);
+
+  // Filter organizations based on user assignments and role
+  const userOrganizations = userProfile.role === 'root_admin' || userProfile.role === 'admin'
+    ? allOrganizations // Admins can see all organizations
+    : allOrganizations.filter(org => 
+        userProfile.assignedOrganizations.includes(org.id)
+      );
+
+  return (
+    <DashboardClient 
+      user={systemState.user} 
+      dbUser={dbUser}
+      organizations={userOrganizations}
+      dashboards={dashboards}
+      userProfile={userProfile}
+    />
+  );
 }

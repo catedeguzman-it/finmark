@@ -27,6 +27,16 @@ interface MemberWithOrganizations {
   };
 }
 
+interface UserWithOrganization {
+  user: SelectUser;
+  organization: {
+    id: number | null;
+    name: string | null;
+    isDefault: boolean | null;
+    joinedAt: Date | null;
+  };
+}
+
 interface ProfileClientProps {
   user: User;
   dbUser: SelectUser;
@@ -159,7 +169,7 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
-  const [allUsers, setAllUsers] = useState<MemberWithOrganizations[]>([]);
+  const [allUsers, setAllUsers] = useState<UserWithOrganization[]>([]);
   const [members, setMembers] = useState<MemberWithOrganizations[]>([]);
   const [organizations, setOrganizations] = useState<SelectOrganization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,7 +206,24 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
           const response = await fetch('/api/users');
           if (response.ok) {
             const users = await response.json();
-            setAllUsers(users);
+            
+            // Group users by ID and show their primary (default) organization
+            const groupedUsers = users.reduce((acc: UserWithOrganization[], current: UserWithOrganization) => {
+              const existingUser = acc.find(u => u.user.id === current.user.id);
+              
+              if (!existingUser) {
+                // First time seeing this user, add them
+                acc.push(current);
+              } else if (current.organization?.isDefault && !existingUser.organization?.isDefault) {
+                // Replace with default organization if we find one
+                const index = acc.findIndex(u => u.user.id === current.user.id);
+                acc[index] = current;
+              }
+              
+              return acc;
+            }, []);
+            
+            setAllUsers(groupedUsers);
           }
         }
       } catch (error) {
@@ -296,7 +323,7 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
               <Card>
                 <CardContent className="p-4">
                   <div className="text-2xl font-bold text-purple-600">
-                    {allUsers.filter(u => u.organizations?.id).length}
+                    {allUsers.filter(u => u.organization?.id).length}
                   </div>
                   <p className="text-sm text-muted-foreground">Assigned to Orgs</p>
                 </CardContent>
@@ -346,21 +373,21 @@ export default function ProfileClient({ user, dbUser }: ProfileClientProps) {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {userWithOrg.organizations?.name ? (
-                            <span className="text-sm font-medium">{userWithOrg.organizations.name}</span>
+                          {userWithOrg.organization?.name ? (
+                            <span className="text-sm font-medium">{userWithOrg.organization.name}</span>
                           ) : (
                             <span className="text-sm text-muted-foreground">Not assigned</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          {userWithOrg.organizations?.isDefault ? (
+                          {userWithOrg.organization?.isDefault ? (
                             <Badge 
                               variant="outline" 
                               className="text-xs bg-blue-100 text-blue-800 border-blue-200"
                             >
                               Default
                             </Badge>
-                          ) : userWithOrg.organizations ? (
+                          ) : userWithOrg.organization ? (
                             <span className="text-sm text-muted-foreground">Assigned</span>
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>

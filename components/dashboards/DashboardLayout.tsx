@@ -3,12 +3,6 @@
 import { useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { 
-  BarChart3, 
-  TrendingUp, 
-  Users, 
-  ShoppingCart, 
-  Building2, 
-  Heart, 
   Settings,
   LogOut,
   Menu,
@@ -17,6 +11,7 @@ import {
   Search
 } from 'lucide-react';
 import { createClient } from '../../utils/supabase/client';
+import { getIconComponent } from '@/utils/iconUtils';
 
 interface DashboardLayoutProps {
   user: User;
@@ -26,12 +21,12 @@ interface DashboardLayoutProps {
 }
 
 const dashboardTypes = [
-  { id: 'overview', name: 'Executive Overview', icon: BarChart3, description: 'High-level KPIs and metrics' },
-  { id: 'financial', name: 'Financial Analytics', icon: TrendingUp, description: 'Revenue, expenses, and financial health' },
-  { id: 'marketing', name: 'Marketing Analytics', icon: Users, description: 'Customer acquisition and campaigns' },
-  { id: 'ecommerce', name: 'E-commerce', icon: ShoppingCart, description: 'Sales, inventory, and customer behavior' },
-  { id: 'manufacturing', name: 'Manufacturing', icon: Building2, description: 'Production, supply chain, and efficiency' },
-  { id: 'healthcare', name: 'Healthcare', icon: Heart, description: 'Patient flow, outcomes, and operations' },
+  { id: 'overview', name: 'Executive Overview', icon: 'BarChart3', description: 'High-level KPIs and metrics' },
+  { id: 'financial', name: 'Financial Analytics', icon: 'TrendingUp', description: 'Revenue, expenses, and financial health' },
+  { id: 'marketing', name: 'Marketing Analytics', icon: 'Users', description: 'Customer acquisition and campaigns' },
+  { id: 'ecommerce', name: 'E-commerce', icon: 'ShoppingCart', description: 'Sales, inventory, and customer behavior' },
+  { id: 'manufacturing', name: 'Manufacturing', icon: 'Building2', description: 'Production, supply chain, and efficiency' },
+  { id: 'healthcare', name: 'Healthcare', icon: 'Heart', description: 'Patient flow, outcomes, and operations' },
 ];
 
 export default function DashboardLayout({ user, children, activeDashboard, onDashboardChange }: DashboardLayoutProps) {
@@ -62,7 +57,7 @@ export default function DashboardLayout({ user, children, activeDashboard, onDas
         <nav className="mt-6 px-3">
           <div className="space-y-1">
             {dashboardTypes.map((dashboard) => {
-              const Icon = dashboard.icon;
+              const Icon = getIconComponent(dashboard.icon);
               const isActive = activeDashboard === dashboard.id;
               
               return (
