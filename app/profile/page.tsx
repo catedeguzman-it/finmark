@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '../../utils/supabase/server';
-import { getUserByAuthId, hasAnyUsers } from '../../db/queries/users';
+import { handleAuthRedirect } from '@/utils/bootstrap-check';
+import { getUserByAuthId } from '../../db/queries/users';
 import ProfileClient from './profile-client';
 import type { Metadata } from 'next';
 
@@ -22,31 +22,13 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  // Check if system needs bootstrap first
-  try {
-    const systemHasUsers = await hasAnyUsers();
-    if (!systemHasUsers) {
-      redirect('/bootstrap');
-    }
-  } catch (error) {
-    console.error('Failed to check system state:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('users_table') || errorMessage.includes('relation') || errorMessage.includes('does not exist')) {
-      redirect('/bootstrap');
-    }
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect('/login');
-  }
+  // Handle bootstrap and auth checks
+  const systemState = await handleAuthRedirect();
 
   // Get user data from database
   let dbUser;
   try {
-    dbUser = await getUserByAuthId(data.user.id);
+    dbUser = await getUserByAuthId(systemState.user.id);
     if (!dbUser) {
       redirect('/onboarding');
     }
@@ -58,5 +40,5 @@ export default async function ProfilePage() {
     redirect('/onboarding');
   }
 
-  return <ProfileClient user={data.user} dbUser={dbUser} />;
+  return <ProfileClient user={systemState.user} dbUser={dbUser} />;
 }

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '../../utils/supabase/server';
-import { hasAnyUsers, getUserByAuthId } from '@/db/queries/users';
+import { handleAuthRedirect } from '@/utils/bootstrap-check';
+import { getUserByAuthId } from '@/db/queries/users';
 import DashboardClient from './dashboard-client';
 import type { Metadata } from 'next';
 
@@ -18,32 +18,13 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect('/login');
-  }
-
-  // Check if system needs bootstrap
-  try {
-    const systemHasUsers = await hasAnyUsers();
-    if (!systemHasUsers) {
-      redirect('/bootstrap');
-    }
-  } catch (error) {
-    console.error('Failed to check system state:', error);
-    // If database tables don't exist, redirect to bootstrap
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('users_table') || errorMessage.includes('relation') || errorMessage.includes('does not exist')) {
-      redirect('/bootstrap');
-    }
-  }
+  // Handle bootstrap and auth checks
+  const systemState = await handleAuthRedirect();
 
   // Check user onboarding status and get user data
   let dbUser;
   try {
-    dbUser = await getUserByAuthId(data.user.id);
+    dbUser = await getUserByAuthId(systemState.user.id);
     if (!dbUser) {
       redirect('/onboarding');
     }
@@ -55,5 +36,5 @@ export default async function DashboardPage() {
     redirect('/onboarding');
   }
 
-  return <DashboardClient user={data.user} dbUser={dbUser} />;
+  return <DashboardClient user={systemState.user} dbUser={dbUser} />;
 }

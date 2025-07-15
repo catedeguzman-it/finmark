@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '../utils/supabase/server';
-import { hasAnyUsers } from '@/db/queries/users';
+import { handleBootstrapRedirect } from '@/utils/bootstrap-check';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -9,25 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  // Check if system needs bootstrap first
-  try {
-    const systemHasUsers = await hasAnyUsers();
-    if (!systemHasUsers) {
-      redirect('/bootstrap');
-    }
-  } catch (error) {
-    console.error('Failed to check system state:', error);
-    // If database tables don't exist, redirect to bootstrap
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('users_table') || errorMessage.includes('relation') || errorMessage.includes('does not exist')) {
-      redirect('/bootstrap');
-    }
-  }
+  // Check system state and handle redirects
+  const systemState = await handleBootstrapRedirect();
 
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-
-  if (data?.user) {
+  if (systemState.isAuthenticated) {
     redirect('/dashboard');
   }
 
