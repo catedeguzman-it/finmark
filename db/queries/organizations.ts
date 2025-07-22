@@ -78,4 +78,38 @@ export async function getUsersWithMultipleOrganizations() {
     .leftJoin(userOrganizationsTable, eq(usersTable.id, userOrganizationsTable.userId))
     .leftJoin(organizationsTable, eq(userOrganizationsTable.organizationId, organizationsTable.id))
     .orderBy(usersTable.createdAt);
+}
+
+export async function getRandomOrganizations(count: number = 2): Promise<SelectOrganization[]> {
+  const allOrganizations = await getAllOrganizations();
+  
+  if (allOrganizations.length === 0) {
+    return [];
+  }
+  
+  // If we have fewer organizations than requested, return all
+  if (allOrganizations.length <= count) {
+    return allOrganizations;
+  }
+  
+  // Shuffle array and take the first 'count' items
+  const shuffled = [...allOrganizations].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
+export async function assignRandomOrganizationsToUser(userId: number, count: number = 2): Promise<void> {
+  const randomOrgs = await getRandomOrganizations(count);
+  
+  for (let i = 0; i < randomOrgs.length; i++) {
+    const org = randomOrgs[i];
+    // Make the first organization the default
+    const isDefault = i === 0;
+    
+    try {
+      await addUserToOrganization(userId, org.id, isDefault);
+    } catch (error) {
+      // Ignore duplicate key errors (user already assigned to this org)
+      console.log(`User ${userId} already assigned to organization ${org.id}`);
+    }
+  }
 } 

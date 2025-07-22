@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { createUser, getUserByAuthId, getUserByEmail, updateUser } from '@/db/queries/users';
+import { assignRandomOrganizationsToUser } from '@/db/queries/organizations';
 import { getURL } from '@/utils/site-url';
 
 export async function login(formData: FormData) {
@@ -75,11 +76,21 @@ export async function signup(formData: FormData) {
 
   // Create user in our database after successful Supabase auth
   if (authData.user) {
+    // Default to 'analyst' role for users without invitation metadata
+    const defaultRole = authData.user.user_metadata?.invited_role || 'analyst';
+    
     const dbUser = await createUser({
       authUserId: authData.user.id,
       email: authData.user.email!,
       name: authData.user.user_metadata?.full_name || authData.user.email!.split('@')[0],
+      role: defaultRole,
     });
+    
+    // For users without invitation metadata, assign random organizations
+    if (!authData.user.user_metadata?.invited_role) {
+      console.log('Auto-onboarding signup user - assigning random organizations');
+      await assignRandomOrganizationsToUser(dbUser.id, 2);
+    }
 
     // If we get here, either user was created or existing user was returned
     console.log('User synced successfully:', dbUser.email);
@@ -163,13 +174,23 @@ export async function syncUserAfterOAuth(authUser: any) {
         });
       } else {
         // Create new user record
+        // Default to 'analyst' role for users without invitation metadata
+        const defaultRole = authUser.user_metadata?.invited_role || 'analyst';
+        
         dbUser = await createUser({
           authUserId: authUser.id,
           email: authUser.email,
           name: authUser.user_metadata?.full_name ||
             authUser.user_metadata?.name ||
             authUser.email.split('@')[0],
+          role: defaultRole,
         });
+        
+        // For users without invitation metadata, assign random organizations
+        if (!authUser.user_metadata?.invited_role) {
+          console.log('Auto-onboarding OAuth user - assigning random organizations');
+          await assignRandomOrganizationsToUser(dbUser.id, 2);
+        }
       }
 
       console.log('User created/linked successfully:', dbUser.email);

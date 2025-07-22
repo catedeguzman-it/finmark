@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
+import { useTheme } from 'next-themes';
 import { useAdminMode } from '@/hooks/use-admin-mode';
 import { AdminFloatingButton } from '@/components/ui/admin-floating-button';
 import { AdminPanel } from '@/components/ui/admin-panel';
@@ -42,6 +43,12 @@ type ViewState =
 
 export default function DashboardClient({ dbUser, organizations, dashboards, userProfile: initialUserProfile }: DashboardClientProps) {
   const { isAdminMode } = useAdminMode();
+  const { setTheme } = useTheme();
+  
+  // Force light mode for dashboard
+  useEffect(() => {
+    setTheme('light');
+  }, [setTheme]);
   
   // Use the provided user profile
   const userProfile: UserProfile = initialUserProfile;
@@ -205,7 +212,7 @@ export default function DashboardClient({ dbUser, organizations, dashboards, use
 
   return (
     <UserPermissionsProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <div className="light min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
         <AppNavbar user={dbUser} />
         
         <main className="max-w-7xl mx-auto px-6 py-8">

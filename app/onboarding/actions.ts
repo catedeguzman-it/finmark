@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { getUserByAuthId, updateUser, createUser } from '@/db/queries/users';
-import { addUserToOrganization, getAllOrganizations } from '@/db/queries/organizations';
+import { addUserToOrganization, getAllOrganizations, assignRandomOrganizationsToUser } from '@/db/queries/organizations';
 
 export async function onboardUser(formData: FormData) {
   const supabase = await createClient();
@@ -18,12 +18,15 @@ export async function onboardUser(formData: FormData) {
 
   // If user doesn't exist in our database, create them
   if (!dbUser) {
+    // Default to 'analyst' role for users without invitation metadata
+    const defaultRole = user.user_metadata?.invited_role || 'analyst';
+    
     dbUser = await createUser({
       authUserId: user.id,
       email: user.email,
       name: '',
       position: '',
-      role: 'member',
+      role: defaultRole,
       isOnboarded: false,
     });
   }
@@ -37,7 +40,8 @@ export async function onboardUser(formData: FormData) {
   }
 
   // Get invitation data from user metadata (set during invite)
-  const userRole = user.user_metadata?.invited_role || 'member';
+  // If no invitation metadata exists, default to 'analyst' role for auto-onboarding
+  const userRole = user.user_metadata?.invited_role || 'analyst';
   const position = user.user_metadata?.invited_position || '';
   const organizationName = user.user_metadata?.invited_organization || '';
 
@@ -46,6 +50,7 @@ export async function onboardUser(formData: FormData) {
     position,
     organizationName,
     userMetadata: user.user_metadata,
+    isAutoOnboarding: !user.user_metadata?.invited_role,
   });
 
   // Update user with name, position, and role from invitation metadata
@@ -66,8 +71,12 @@ export async function onboardUser(formData: FormData) {
     );
     
     if (organization) {
-      await addUserToOrganization(dbUser.id, organization.id, userRole);
+      await addUserToOrganization(dbUser.id, organization.id, true);
     }
+  } else {
+    // For users without invitation metadata, assign random organizations
+    console.log('DEBUG: Auto-onboarding user - assigning random organizations');
+    await assignRandomOrganizationsToUser(dbUser.id, 2);
   }
 
   revalidatePath('/');
