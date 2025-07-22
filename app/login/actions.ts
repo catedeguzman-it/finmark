@@ -17,7 +17,7 @@ export async function login(formData: FormData) {
 
   // Validate input
   if (!data.email || !data.password) {
-    throw new Error('Email and password are required');
+    return { error: 'Email and password are required' };
   }
 
   const { error } = await supabase.auth.signInWithPassword(data);
@@ -27,11 +27,11 @@ export async function login(formData: FormData) {
 
     // Provide more specific error messages
     if (error.message.includes('Invalid login credentials')) {
-      throw new Error('Invalid email or password');
+      return { error: 'Invalid email or password' };
     } else if (error.message.includes('Email not confirmed')) {
-      throw new Error('Please check your email and confirm your account');
+      return { error: 'Please check your email and confirm your account' };
     } else {
-      throw new Error('Login failed. Please try again.');
+      return { error: 'Login failed. Please try again.' };
     }
   }
 
@@ -50,13 +50,13 @@ export async function signup(formData: FormData) {
 
   // Validate input
   if (!data.email || !data.password) {
-    throw new Error('Email and password are required');
+    return { error: 'Email and password are required' };
   }
 
   // Check if user already exists in our database
   const existingUser = await getUserByEmail(data.email);
   if (existingUser) {
-    throw new Error('An account with this email already exists. Please sign in instead.');
+    return { error: 'An account with this email already exists. Please sign in instead.' };
   }
 
   const { data: authData, error } = await supabase.auth.signUp(data);
@@ -66,11 +66,11 @@ export async function signup(formData: FormData) {
 
     // Provide more specific error messages
     if (error.message.includes('User already registered')) {
-      throw new Error('An account with this email already exists. Please sign in instead.');
+      return { error: 'An account with this email already exists. Please sign in instead.' };
     } else if (error.message.includes('Password should be at least')) {
-      throw new Error('Password must be at least 6 characters long');
+      return { error: 'Password must be at least 6 characters long' };
     } else {
-      throw new Error(error.message || 'Account creation failed. Please try again.');
+      return { error: error.message || 'Account creation failed. Please try again.' };
     }
   }
 
@@ -101,46 +101,41 @@ export async function signup(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
-  try {
-    const supabase = await createClient();
-    
-    // Get the redirect URL using Supabase's recommended pattern
-    const baseUrl = getURL();
-    const redirectUrl = `${baseUrl}auth/callback`;
-    
-    console.log('🔍 OAuth Debug Info:');
-    console.log('Base URL from getURL():', baseUrl);
-    console.log('Full redirect URL:', redirectUrl);
-    console.log('Environment variables:', {
-      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-      NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
-      VERCEL_URL: process.env.VERCEL_URL,
-    });
+  const supabase = await createClient();
+  
+  // Get the redirect URL using Supabase's recommended pattern
+  const baseUrl = getURL();
+  const redirectUrl = `${baseUrl}auth/callback`;
+  
+  console.log('🔍 OAuth Debug Info:');
+  console.log('Base URL from getURL():', baseUrl);
+  console.log('Full redirect URL:', redirectUrl);
+  console.log('Environment variables:', {
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+  });
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: redirectUrl,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
       },
-    });
+    },
+  });
 
-    if (error) {
-      console.error('Google OAuth error:', error);
-      throw new Error('Google authentication failed. Please try again.');
-    }
+  if (error) {
+    console.error('Google OAuth error:', error);
+    return { error: 'Google authentication failed. Please try again.' };
+  }
 
-    if (data.url) {
-      redirect(data.url);
-    } else {
-      throw new Error('Failed to initiate Google authentication');
-    }
-  } catch (error) {
-    // Re-throw the error so it can be caught by the client
-    throw error;
+  if (data.url) {
+    redirect(data.url);
+  } else {
+    return { error: 'Failed to initiate Google authentication' };
   }
 }
 
